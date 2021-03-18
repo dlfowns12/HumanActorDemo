@@ -1,0 +1,15 @@
+.idea
+.vs
+
+.DS_Store
+obj/
+build/
+captures/
+Library/
+Logs/
+Temp/
+UserSettings/
+
+*.sln
+*.csproj
+.vscode
