@@ -8,23 +8,74 @@ using Avatar3D;
 
 public class SceneController : MonoBehaviour
 {
+
+    UnityTest m_UnityTest = new UnityTest();
+
     private AvatarKits commonAvatarKits = null;
+
+    private int curSex = -1;
+
     private bool flag_shader_load = false;
+    private bool flag_avatar_load = false;
+
     private string avatar_parent_node_name = "AvatarController";
+    private string background_canvas_name  = "BgCanvas";
+    private string camera_node_name = "Main Camera";
+
     private GameObject sceneParentGO;
+    private Texture2D cameraTexture;
+    private bool flag_ar_drive_enable = false;
+
+    /**************************/
+
+    //跟背景相关的
+    private BackGroundManager m_BGObj = null;
+    private CamManager        m_CamManager = null;
+
+    /************************/
     private void Awake()
     {
+        //关闭
+        UnityEngine.Analytics.Analytics.enabled = false;
+        UnityEngine.Analytics.Analytics.deviceStatsEnabled = false;
+        UnityEngine.Analytics.Analytics.initializeOnStartup = false;
+        UnityEngine.Analytics.Analytics.limitUserTracking = false;
+        UnityEngine.Analytics.PerformanceReporting.enabled = false;
+
+        Debug.Log("QualitySettings#shadowDistance: " + QualitySettings.shadowDistance);
+        Debug.Log("QualitySettings#antiAliasing: " + QualitySettings.antiAliasing);
+
     }
+
+
+
 
     // Start is called before the first frame update
     void Start()
     {
+
+        //Debug.Log("screenW:" + Screen.width);
+        //Debug.Log("screenH:" + Screen.height);
+
+
+        m_BGObj = GameObject.Find(background_canvas_name).GetComponent<BackGroundManager>();
+
+        m_CamManager = GameObject.Find(camera_node_name).GetComponent<CamManager>();
+
+
     }
 
+    bool flag_dir = false;
     // Update is called once per frame
     void Update()
     {
+        if (flag_ar_drive_enable)
+        {
+            if (commonAvatarKits != null)
+                commonAvatarKits.Update();
+        }
     }
+
 
     /// <summary>
     /// 创建形象
@@ -42,6 +93,9 @@ public class SceneController : MonoBehaviour
             commonAvatarKits = new AvatarKits(sceneParentGO);
             res = commonAvatarKits.loadStandardModel(strSceneFile);
         }
+        if (res)
+            MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+
 
         return res;
     }
@@ -50,10 +104,19 @@ public class SceneController : MonoBehaviour
     /// <summary>
     /// 卸载形象
     /// </summary>
+    /// <param name="sex"></param>
     public void UnloadAvatar()
     {
-        commonAvatarKits.unloadStandardModel();
-        commonAvatarKits = null;
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.unloadStandardModel();
+            commonAvatarKits.unInstall();
+            commonAvatarKits = null;
+            System.GC.Collect();
+
+            //删除所有资源
+            //unloadResource();
+        }
     }
 
     /// <summary>
@@ -79,6 +142,22 @@ public class SceneController : MonoBehaviour
         {
             AssetBundle.UnloadAllAssetBundles(true);
             flag_shader_load = false;
+        }
+    }
+
+    /// <summary>
+    /// 卸载场景,删除shader，以及与场景相关的资源
+    /// </summary>
+    public void UnloadScene()
+    {
+        UnloadResource();
+    }
+
+    public void RotateAvatar(float dist)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.rotateAvatar(dist);
         }
     }
 }
