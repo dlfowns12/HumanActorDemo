@@ -11,9 +11,11 @@ public class UIManager : MonoBehaviour
     SceneController sCtrl = null;
 
     string control_node_name = "SceneController";
+    int iAnimCount;
 
     //旋转
     float rotateRd = 5.0f;
+
     public void Start()
     { 
     }
@@ -43,6 +45,7 @@ public class UIManager : MonoBehaviour
 
         if (!sCtrl)
         {
+            //Debug.Log("scenecontroller ");
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
         }
         sCtrl.createAvatar(mTest.model);
@@ -59,6 +62,23 @@ public class UIManager : MonoBehaviour
 
     }
 
+    //相机设置
+    int camSetCount = 0;
+    public void cam_set_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find("SceneController").GetComponent<SceneController>();
+
+        if(camSetCount==0)
+            sCtrl.SetCamera(mTest.strCamFile);
+        else
+            sCtrl.SetCamera(mTest.strCamFile);
+
+        camSetCount++;
+        if (camSetCount >= 2)
+            camSetCount = 0;
+    }
+
     public void rotate_avatar_left_click()
     {
         if (!sCtrl)
@@ -71,5 +91,91 @@ public class UIManager : MonoBehaviour
         if (!sCtrl)
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
         sCtrl.RotateAvatar(rotateRd * -1);
+    }
+
+
+    string strFaceArData = "";
+    FaceARMultiJson strFaceArMultiData;
+    int tNum = 0;
+    public void face_ar_drive_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if (strFaceArData == "")
+        {
+            strFaceArData = File.ReadAllText(mTest.arDriveJsonFile[0]);
+            strFaceArMultiData = JsonUtility.FromJson<FaceARMultiJson>(strFaceArData);
+        }
+
+        string strFaceAROneJson = JsonUtility.ToJson(strFaceArMultiData.list[tNum]);
+        sCtrl.ArFaceRealDrive(strFaceAROneJson);
+
+        tNum = tNum + 1;
+        if (tNum >= strFaceArMultiData.list.Count)
+            tNum = 0;
+
+        Debug.Log("tNum:" + tNum);
+    }
+    
+
+    public void face_ar_drive_on_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ArFaceDriveEnable("enable");
+    }
+    public void face_ar_drive_off_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ArFaceDriveDisable("disable");
+    }
+
+    /**************************动画相关*****************************/
+
+    public void anim_play()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        
+       sCtrl.PlayAnimation(mTest.animFiles[iAnimCount]);
+
+        iAnimCount = iAnimCount + 1;
+        if (iAnimCount >= 2)
+            iAnimCount = 0;
+    }
+
+    public void anim_stop()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.StopAnimation("stop");
+    }
+
+    /*****************跟录制相关************************/
+
+    public void record_mp4_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        string mp4Data = File.ReadAllText(mTest.mp4file);
+
+        sCtrl.RecordMP4Video(mp4Data);
+
+    }
+
+    public void stop_mp4_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.StopRecordMP4Video("222");
+
     }
 }

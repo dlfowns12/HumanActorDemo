@@ -153,11 +153,105 @@ public class SceneController : MonoBehaviour
         UnloadResource();
     }
 
+    /******************************************************************************************************
+
+    以下是跟相机相关的接口
+
+    *******************************************************************************************************/
+    public void SetCamera(string strJsonFile)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.setCamera(strJsonFile);
+        }
+
+    }
+
     public void RotateAvatar(float dist)
     {
         if (commonAvatarKits != null)
         {
             commonAvatarKits.rotateAvatar(dist);
         }
+    }
+ 
+    /// <summary>
+    /// AR虚拟形象驱动
+    /// </summary>
+    /// <param name="arJson"></param>
+    public void ArFaceRealDrive(string arJson)
+    {
+        if (commonAvatarKits != null && flag_ar_drive_enable)
+        {
+            commonAvatarKits.faceArDrive(arJson);
+        }
+    }
+    public void ArFaceDriveEnable(string strEnable)
+    {
+        if (commonAvatarKits != null)
+        {
+            flag_ar_drive_enable = true;
+            commonAvatarKits.setAvatarBodyHide();
+        }
+    }
+
+
+    public void ArFaceDriveDisable(string strDisable)
+    {
+        if (commonAvatarKits != null)
+        {
+            flag_ar_drive_enable = false;
+            commonAvatarKits.mCamManager.restoreCameraSet();
+            commonAvatarKits.restoreAvatarShow();
+            commonAvatarKits.setAvatarShow("1");
+
+        }
+    }
+
+
+    /// <summary>
+    /// "0":不显示；"1"：显示
+    /// </summary>
+    /// <param name="strShow"></param>
+    public void ArFaceShow(string strShow)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.setAvatarShow(strShow);
+
+    }
+
+    /******************************************************************************************************
+
+    以下是跟动画相关
+
+    *******************************************************************************************************/
+    public void PlayAnimation(string strAnimationFile)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.playAnims(strAnimationFile);
+
+    }
+
+    public void StopAnimation(string strStop)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.stopAnims();
+    }
+
+    /******************************************************************************************************
+
+    以下是跟录制相关
+
+    *******************************************************************************************************/
+
+    public void RecordMP4Video(string dataJson)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.recordMP4Video(dataJson);
+    }
+    public void StopRecordMP4Video(string data)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.stopRecordMP4Video();
     }
 }
