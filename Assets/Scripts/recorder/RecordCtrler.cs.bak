@@ -1,0 +1,38 @@
+using UnityEngine;
+using UnityEngine.UI;
+using ScreenRecorder;
+
+public class RecordCtrler : MonoBehaviour
+{
+    public Recorder capture;
+    public Button btn;
+    public Text txt;
+    private bool recording = false;
+
+    void Start()
+    {
+        btn.onClick.AddListener(() =>
+        {
+            recording = !recording;
+            txt.text = recording ? "停止录制" : "开始录制";
+
+            if (recording)
+            {
+                capture.StartRecord("d://1222.gif");
+            }
+            else
+            {
+                capture.StopRecord();
+                // 生成gif
+                capture.GenerateGif((gifBytes, gifSavePath) =>
+                {
+#if UNITY_EDITOR
+                    UnityEditor.AssetDatabase.Refresh();
+#endif
+                    Debug.Log("gif生成成功，保存路径：" + gifSavePath);
+               
+                });
+            }
+        });
+    }
+}

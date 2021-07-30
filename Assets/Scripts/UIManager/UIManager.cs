@@ -62,6 +62,14 @@ public class UIManager : MonoBehaviour
 
     }
 
+    public void pta_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.GenAvatar(mTest.genAvatarJFile);
+    }
+
     //œ‡ª˙…Ë÷√
     int camSetCount = 0;
     public void cam_set_click()
@@ -178,4 +186,37 @@ public class UIManager : MonoBehaviour
         sCtrl.StopRecordMP4Video("222");
 
     }
+
+    public void record_gif_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        string dataJson = File.ReadAllText(mTest.gifile);
+
+        Debug.Log(dataJson);
+        sCtrl.RecordGIF(dataJson);
+
+       
+    }
+
+
+    public void stop_gif_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        sCtrl.StopRecordGIF("123");
+    }
+
+    public void record_png_click()
+    {
+
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.CaptureScreenToPNG("123");
+
+    }
+
 }

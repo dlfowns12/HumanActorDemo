@@ -20,12 +20,23 @@ public class UnityTest
     public string strCamFile        = rootDir + "cam.scene";
     public string strCamBgColorFile = rootDir + "cam_color.scene";
 
+    public string genAvatarJFile = "C:/work/test/test.json";
+
     public string[] arDriveJsonFile = { rootDir + "ardrive/test.json"};
     public string[] arDriveBground = { rootDir + "ardrive/test.scene" };
 
     public string[] animFiles = { rootDir + "anims/" + "config.scene"};
 
+    public string gifile = rootDir + "record/gif.json";
+
     public string mp4file = rootDir + "record/mp4.json";
+
+
+    public string bgImageFile = rootDir + "bg/img/config.scene";
+
+    public string bgVideoFile = rootDir + "bg/vid/config.scene";
+
+
 
     public static void testLoadModel(SceneController sCtrl, string strModel, int sex)
     {

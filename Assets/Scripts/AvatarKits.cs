@@ -31,10 +31,20 @@ namespace Avatar3D
         private AssetBundle mModel_ab;
 
         //*****************************************
+        private string ptaLinkFile = null;
+        private string ptaMapFile = null;
+        private string emBsMapFile = null;
+        private string boneMapFile = null;
+        private string boneSimFile = null;
+
+        //*****************************************
 
         private string camera_node_name = "Main Camera";
         private string light_node_name = "Directional Light";
 
+        //标模本身管理*****************************
+        //存储模型本身的顶点数据
+        //*****************************************
         //跟相机相关
         public CamManager mCamManager = null;
 
@@ -114,6 +124,7 @@ namespace Avatar3D
             m_AvatarManager.meshGo = new Dictionary<string, GameObject>();
             m_AvatarManager.meshRender = new Dictionary<string, SkinnedMeshRenderer>();
             m_AvatarHeadSK = new List<SkinnedMeshRenderer>();
+            m_AvatarManager.vtList = new List<Vector3[]>();
             //****************************************************************************
             //模块：场景管理之相机
             mCamManager = GameObject.Find(camera_node_name).GetComponent<CamManager>();
@@ -237,6 +248,14 @@ namespace Avatar3D
                 return false;
 
 
+            //相关联的几个文件
+            ptaLinkFile = rootDir + "/" + modeljson.linkfile;
+            ptaMapFile = rootDir + "/" + modeljson.mapfile;
+            emBsMapFile = rootDir + "/" + modeljson.embsmapfile;
+            boneMapFile = rootDir + "/" + modeljson.bonemapfile;
+            boneSimFile = rootDir + "/" + modeljson.simfile;
+
+
             //step1:加载模型
             string abmodel_file = rootDir + "/" + modeljson.abfile;
             mModel_ab = AssetBundle.LoadFromFile(abmodel_file);
@@ -290,25 +309,45 @@ namespace Avatar3D
               
             }
 
+
+
             // Debug.Log("m_AvatarManager.meshRender.Count:" + m_AvatarManager.meshRender.Count);
             //单独提取skinnedmesh复制到对象上
 
             Debug.Log("m_AvatarManager.meshRender count:" + m_AvatarManager.meshRender.Count);
 
-            m_AvatarManager.meshRender.TryGetValue(head_node, out av_skHead);
-            m_AvatarManager.meshRender.TryGetValue(brow_node, out av_skBrow);
-            m_AvatarManager.meshRender.TryGetValue(eyelash_node, out av_skEyelash);
-            m_AvatarManager.meshRender.TryGetValue(eyel_node, out av_skEyel);
-            m_AvatarManager.meshRender.TryGetValue(eyer_node, out av_skEyer);
-            m_AvatarManager.meshRender.TryGetValue(oral_node, out av_skOral);
-            m_AvatarManager.meshRender.TryGetValue(body_node, out m_AvatarBodySK);
-            m_AvatarHeadSK.Add(av_skHead);
-            m_AvatarHeadSK.Add(av_skBrow);
-            m_AvatarHeadSK.Add(av_skEyelash);
-            m_AvatarHeadSK.Add(av_skEyer);
-            m_AvatarHeadSK.Add(av_skEyel);
-            m_AvatarHeadSK.Add(av_skOral);
+            if (m_AvatarManager.meshRender.Count >= 6)
+            {
+                m_AvatarManager.meshRender.TryGetValue(head_node, out av_skHead);
+                m_AvatarManager.meshRender.TryGetValue(brow_node, out av_skBrow);
+                m_AvatarManager.meshRender.TryGetValue(eyelash_node, out av_skEyelash);
+                m_AvatarManager.meshRender.TryGetValue(eyel_node, out av_skEyel);
+                m_AvatarManager.meshRender.TryGetValue(eyer_node, out av_skEyer);
+                m_AvatarManager.meshRender.TryGetValue(oral_node, out av_skOral);
+                m_AvatarManager.meshRender.TryGetValue(body_node, out m_AvatarBodySK);
+                m_AvatarHeadSK.Add(av_skHead);
+                m_AvatarHeadSK.Add(av_skBrow);
+                m_AvatarHeadSK.Add(av_skEyelash);
+                m_AvatarHeadSK.Add(av_skEyer);
+                m_AvatarHeadSK.Add(av_skEyel);
+                m_AvatarHeadSK.Add(av_skOral);
+
+                //存储顶点
+                for (int i = 0; i < m_AvatarHeadSK.Count; i++)
+                {
+                    Vector3[] vts = m_AvatarHeadSK[i].sharedMesh.vertices;
+                    m_AvatarManager.vtList.Add(vts);
+                }
+            }
+            else
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_model_skinmeshrender_count, AvatarID.Err_model_skinmeshrender_count.ToString());
+                return false;
+            }
+
             m_AvatarManager.bodySKRender = m_AvatarBodySK;
+            m_AvatarManager.getBonesDict(m_AvatarBodySK);
+
 
             //ar相关的系数
             if (modeljson.trackoffset == null || modeljson.facewidth <= 0.0f || modeljson.zoomcoef <= 0.0f)
@@ -339,14 +378,124 @@ namespace Avatar3D
             headTransMat[0] = av_skHead.sharedMaterials[0];
 
             Material matneck = mModel_ab.LoadAsset<Material>(m_AvatarManager.neckTransMatName);
+            if (matneck == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_head_material_num, AvatarID.Err_head_material_num.ToString());
+                return true;
+            }
 
             Material matInstneck = GameObject.Instantiate(matneck);
-            headTransMat[headMatNum - 1] = matInstneck;
-            m_AvatarManager.headTransMat = headTransMat;
+            if (matInstneck == null)
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_head_material_num, AvatarID.Err_head_material_num.ToString());
+            else
+            {
+                headTransMat[headMatNum - 1] = matInstneck;
+                m_AvatarManager.headTransMat = headTransMat;
+            }
 
       
             return true;
         }
+
+        public void genAvatar(string strJsonFile)
+        {
+            //step1: 读取生成的形象数据
+            string usr_data = File.ReadAllText(strJsonFile);
+            AvatarVertexData userData = JsonUtility.FromJson<AvatarVertexData>(usr_data);
+            if (userData == null)
+            {
+                MsgEvent.SendCallBackMsg(3, strJsonFile);
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_pta_file_noexist, AvatarID.Err_pta_file_noexist.ToString());
+                return;
+            }
+
+            //step2: 读取配置文件
+            string head_dump_map = File.ReadAllText(ptaLinkFile);
+            string obj_to_ab_map = File.ReadAllText(ptaMapFile);
+
+            if (head_dump_map == null || obj_to_ab_map == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_map_file_noexist, AvatarID.Err_map_file_noexist.ToString());
+                return;
+            }
+
+            vertLinkMap headDump = JsonUtility.FromJson<vertLinkMap>(head_dump_map);
+            AvatarObjMapAB obj2ab = JsonUtility.FromJson<AvatarObjMapAB>(obj_to_ab_map);
+
+            if (headDump.head.Count == 0 || obj2ab.headTable.Count == 0)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_map_file_noexist, AvatarID.Err_map_file_noexist.ToString());
+                return;
+            }
+
+          
+            List<int[]> vtFlags = new List<int[]>();
+            for (int i = 0; i < m_AvatarManager.vtList.Count; i++)
+            {
+                int num = m_AvatarManager.vtList[i].Length;
+                int[] vtflag = new int[num];
+                Array.Clear(vtflag, 0, num); //数组每个元素置零
+                vtFlags.Add(vtflag);
+
+            
+            }
+
+            List<List<vertLinkParam>> headVtlinks = new List<List<vertLinkParam>>();
+            List<List<int>> headTables = new List<List<int>>();
+            List<List<AvatarPosParam>> exterAvatarPosData = new List<List<AvatarPosParam>>();
+            exterAvatarPosData.Add(userData.head); exterAvatarPosData.Add(userData.brow);
+            exterAvatarPosData.Add(userData.eyelash); exterAvatarPosData.Add(userData.eyeL);
+            exterAvatarPosData.Add(userData.eyeR); exterAvatarPosData.Add(userData.oral);
+
+            headVtlinks.Add(headDump.head); headVtlinks.Add(headDump.brow);
+            headVtlinks.Add(headDump.eyelash); headVtlinks.Add(headDump.eyeR);
+            headVtlinks.Add(headDump.eyeL); headVtlinks.Add(headDump.oral);
+
+            headTables.Add(obj2ab.headTable); headTables.Add(obj2ab.browTable);
+            headTables.Add(obj2ab.eyelashTable); headTables.Add(obj2ab.eyeLTable);
+            headTables.Add(obj2ab.eyeRTable); headTables.Add(obj2ab.oralTable);
+
+            for (int i = 0; i < m_AvatarHeadSK.Count; i++)
+            {
+                Mesh msh = m_AvatarHeadSK[i].sharedMesh;
+                Vector3[] vertices = m_AvatarHeadSK[i].sharedMesh.vertices;
+
+
+                for (int j = 0; j < exterAvatarPosData[i].Count; j++)
+                {
+                    int id = int.Parse(exterAvatarPosData[i][j].index);
+
+                    float px = exterAvatarPosData[i][j].pos[0];
+                    float py = exterAvatarPosData[i][j].pos[1];
+                    float pz = exterAvatarPosData[i][j].pos[2];
+
+                    int corrID = headTables[i][id];
+                    int num = headVtlinks[i][corrID].linkIndex.Count;
+
+                    for (int k = 0; k < num; k++)
+                    {
+                        int comIndex = headVtlinks[i][corrID].linkIndex[k];
+                      
+                        if (comIndex >= vtFlags[i].Length)
+                        { MsgEvent.SendCallBackMsg((int)AvatarID.Err_model_index_out, AvatarID.Err_model_index_out.ToString()); return; }
+
+                        if (vtFlags[i][comIndex] == 1)
+                            continue;
+                        else vtFlags[i][comIndex] = 1;
+
+                        vertices[comIndex].x = px;
+                        vertices[comIndex].y = py;
+                        vertices[comIndex].z = pz;
+                    }
+                }
+                m_AvatarHeadSK[i].sharedMesh.vertices = vertices;
+                // m_AvatarHeadSK[i].sharedMesh.RecalculateNormals();
+
+
+            }
+            MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+        }
+
 
         /******************************************************************************************************
 
@@ -424,6 +573,96 @@ namespace Avatar3D
         public void restoreHeadGesture()
         {
             head_root_bone_trans.localEulerAngles = new Vector3(head_orig_rotation.x, head_orig_rotation.y, head_orig_rotation.z);
+        }
+
+        public void faceArDrive2(string arJson)
+        {
+
+            FaceARJson strFaceArData = JsonUtility.FromJson<FaceARJson>(arJson);
+            float[] cameraMatrixArg = strFaceArData.camMatrix;
+
+            Matrix4x4 cameraMatrix = new Matrix4x4();
+            cameraMatrix.SetRow(0, new Vector4(cameraMatrixArg[0], cameraMatrixArg[1], cameraMatrixArg[2], cameraMatrixArg[3]));
+            cameraMatrix.SetRow(1, new Vector4(cameraMatrixArg[4], cameraMatrixArg[5], cameraMatrixArg[6], cameraMatrixArg[7]));
+            cameraMatrix.SetRow(2, new Vector4(cameraMatrixArg[8], cameraMatrixArg[9], cameraMatrixArg[10], cameraMatrixArg[11]));
+            cameraMatrix.SetRow(3, new Vector4(cameraMatrixArg[12], cameraMatrixArg[13], cameraMatrixArg[14], cameraMatrixArg[15]));
+            Camera.main.projectionMatrix = cameraMatrix.transpose;
+
+
+            float[] poseMatrixArg = strFaceArData.poseMatrix;
+            Matrix4x4 poseMatrix = new Matrix4x4();
+            poseMatrix.SetRow(0, new Vector4(poseMatrixArg[0], poseMatrixArg[1], poseMatrixArg[2], poseMatrixArg[3]));
+            poseMatrix.SetRow(1, new Vector4(poseMatrixArg[4], poseMatrixArg[5], poseMatrixArg[6], poseMatrixArg[7]));
+            poseMatrix.SetRow(2, new Vector4(poseMatrixArg[8], poseMatrixArg[9], poseMatrixArg[10], poseMatrixArg[11]));
+            poseMatrix.SetRow(3, new Vector4(poseMatrixArg[12], poseMatrixArg[13], poseMatrixArg[14], poseMatrixArg[15]));
+            Matrix4x4 transposeMatrix = poseMatrix.transpose;
+
+
+
+            Matrix4x4 matRot = Matrix4x4.identity;
+            matRot.SetColumn(0, transposeMatrix.GetColumn(0));
+            matRot.SetColumn(1, transposeMatrix.GetColumn(1));
+            matRot.SetColumn(2, transposeMatrix.GetColumn(2));
+            var mat22 = Matrix4x4.Rotate(Quaternion.AngleAxis(180, Vector3.up));
+
+            matRot = matRot * mat22;
+
+            //右手转左手
+            Vector3 tmpt = new Vector3(transposeMatrix.GetColumn(3).x * 1, transposeMatrix.GetColumn(3).y, transposeMatrix.GetColumn(3).z * -1);
+            Matrix4x4 matT = Matrix4x4.Translate(tmpt);
+
+            var mat2 = Matrix4x4.Scale(new Vector3(1.0f, 1.0f, -1.0f));
+
+
+            // 不同模型和算法标准人脸模型的offset调节
+            var matTmp = Matrix4x4.identity;
+
+            matRot = mat2 * (matRot * matTmp) * mat2;
+
+            Matrix4x4 result = matT * matRot;
+
+            Vector3 headPos = new Vector3(result.GetColumn(3).x, result.GetColumn(3).y, result.GetColumn(3).z);
+            Vector3 headScale = new Vector3(strFaceArData.headScale, strFaceArData.headScale, strFaceArData.headScale);
+            Vector3 eulerAngles = result.rotation.eulerAngles;
+
+            Vector3 headAngle = new Vector3(-eulerAngles.x, eulerAngles.y - 180, -eulerAngles.z);
+
+            setHeadGesture(headAngle.y, headAngle.z, headAngle.x + 360.0f);
+
+            Quaternion qt = Quaternion.Euler(headAngle.y, headAngle.z, headAngle.x + 360.0f);
+            Vector3 direction = new Vector3(0.0f, 0.0f, 0.0f);
+            Vector3 rotatedDirection = qt * direction;
+            Vector3 rotatedPoint = rotatedDirection;
+
+            float xvalue = Mathf.Sin(Mathf.PI * headAngle.y / 180.0f);
+            xvalue = Mathf.Abs(xvalue);
+            
+
+            float yvalue = Mathf.Sin(Mathf.PI * headAngle.x / 180.0f);
+            yvalue = Mathf.Abs(yvalue);
+
+            if (!flag_ar_drive_update)
+            {
+
+                if (headAngle.y > 0)
+                    m_LocalTrackx = headPos.x +xvalue;
+                else
+                    m_LocalTrackx = headPos.x - xvalue;
+
+                m_LocalTrackx = m_LocalTrackx + 0.0f;
+
+                m_LocalTracky =  headPos.y;
+                m_LocalTrackz = -headPos.z;
+
+                pre_headPos   = headPos;
+                pre_headAngle = headAngle;
+
+                pre_qt = qt;
+                pre_direction = direction;
+
+            }
+            flag_ar_drive_update = true;
+
         }
 
 
@@ -588,6 +827,59 @@ namespace Avatar3D
 
             m_SRecorder.stopMP4Record();
             MsgEvent.SendCallBackMsg((int)AvatarID.Suc_mp4_recording_stop, AvatarID.Suc_mp4_recording_stop.ToString());
+        }
+
+        public void recordGIF(string dataJson)
+        {
+            RecordGifJson gifData = JsonUtility.FromJson<RecordGifJson>(dataJson);
+            if (gifData == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_record_data, AvatarID.Err_record_data.ToString());
+                return;
+            }
+            m_SRecorder.startGIFRecord(gifData.path, gifData.width, gifData.height, gifData.fps);
+
+            //m_SRecorder.startGIFRecord("d:/3333", 640, 480, 40);
+
+
+        }
+        public void stopRecordGIF()
+        {
+            m_SRecorder.stopGIFRecord();
+        }
+
+        public void captureScreenPng(string dataJson)
+        {
+            RecordPngJson pngData = JsonUtility.FromJson<RecordPngJson>(dataJson);
+            if (pngData == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_record_data, AvatarID.Err_record_data.ToString());
+                return;
+            }
+            m_SRecorder.capturePNG(pngData.path, pngData.width, pngData.height);
+           // m_SRecorder.capturePNG("d:/123.png", 520, 520);
+            MsgEvent.SendCallBackMsg((int)AvatarID.Suc_png_capture, AvatarID.Suc_png_capture.ToString());
+
+        }
+
+        public void recordWebP(string dataJson)
+        {
+            RecordWebPJson webpData = JsonUtility.FromJson<RecordWebPJson>(dataJson);
+            if (webpData == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_record_data, AvatarID.Err_record_data.ToString());
+                return;
+            }
+           // Debug.Log("recordWebP width:" + webpData.width + " height:" + webpData.height + " fps:" + webpData.fps);
+            m_SRecorder.startWebPRecord(webpData.path, webpData.width, webpData.height, webpData.fps);
+
+            //m_SRecorder.startGIFRecord("d:/3333", 640, 480, 40);
+
+
+        }
+        public void stopRecordWebP()
+        {
+            m_SRecorder.stopWebPRecord();
         }
     }
 }

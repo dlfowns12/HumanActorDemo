@@ -20,6 +20,9 @@ public class AvatarManager
 
     public SkinnedMeshRenderer bodySKRender;
 
+    //模型本身顶点数据  //按照 头、眉毛、睫毛、左眼、右眼、口腔的数据存放
+    public List<Vector3[]> vtList;
+
     public float rAngle;
     public float speedx;
 
@@ -50,5 +53,21 @@ public class AvatarManager
 
     public Material[] headTransMat;
     public Material[] headNormalMat;
+
+    public void getBonesDict(SkinnedMeshRenderer body)
+    {
+        if (bonesDic == null)
+        {
+            bonesDic = new Dictionary<string, int>();
+            bonesTrans = new List<Transform>();
+        }
+        int count = body.bones.Length;
+        for(int i=0;i<count;i++)
+        {
+            string name = body.bones[i].name;
+            bonesDic.Add(name, i);
+            bonesTrans.Add(body.bones[i]);
+        }
+    }
    
 }

@@ -13,6 +13,7 @@ public class SceneController : MonoBehaviour
 
     private AvatarKits commonAvatarKits = null;
 
+    private SexType m_sexType;
     private int curSex = -1;
 
     private bool flag_shader_load = false;
@@ -53,6 +54,7 @@ public class SceneController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        m_sexType = new SexType();
 
         //Debug.Log("screenW:" + Screen.width);
         //Debug.Log("screenH:" + Screen.height);
@@ -77,6 +79,11 @@ public class SceneController : MonoBehaviour
     }
 
 
+    /******************************************************************************************************
+
+    接口：形象生成 
+
+    *******************************************************************************************************/
     /// <summary>
     /// 创建形象
     /// </summary>
@@ -153,6 +160,26 @@ public class SceneController : MonoBehaviour
         UnloadResource();
     }
 
+
+    /******************************************************************************************************
+
+    以下是跟形象生成相关的接口
+
+    *******************************************************************************************************/
+    /// <summary>
+    /// 基于json数据生成特定的虚拟形象
+    /// </summary>
+    /// <param name="strJsonFile"></param>
+    public void GenAvatar(string strJsonFile)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.genAvatar(strJsonFile);
+        }
+    }
+
+
+
     /******************************************************************************************************
 
     以下是跟相机相关的接口
@@ -183,7 +210,7 @@ public class SceneController : MonoBehaviour
     {
         if (commonAvatarKits != null && flag_ar_drive_enable)
         {
-            commonAvatarKits.faceArDrive(arJson);
+            commonAvatarKits.faceArDrive2(arJson);
         }
     }
     public void ArFaceDriveEnable(string strEnable)
@@ -254,4 +281,32 @@ public class SceneController : MonoBehaviour
         if (commonAvatarKits != null)
             commonAvatarKits.stopRecordMP4Video();
     }
+    public void RecordGIF(string dataJson)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.recordGIF(dataJson);
+    }
+    public void StopRecordGIF(string data)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.stopRecordGIF();
+    }
+
+    public void CaptureScreenToPNG(string data)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.captureScreenPng(data);
+    }
+
+    public void RecordWebP(string dataJson)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.recordWebP(dataJson);
+    }
+    public void StopRecordWebP(string data)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.stopRecordWebP();
+    }
+
 }

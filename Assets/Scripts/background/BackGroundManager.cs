@@ -17,7 +17,10 @@ public class BackGroundManager : MonoBehaviour
     private CanvasScaler  m_CansCalar;
     private RectTransform m_RctTrans;
 
+
     private VideoPlayer videoPlayer;
+
+
 
     //画布大小  客户端界面上显示区域的宽度 高度
     public int bgCanvasWidth;
@@ -42,12 +45,18 @@ public class BackGroundManager : MonoBehaviour
 
         videoPlayer = gameObject.GetComponent<VideoPlayer>();
 
+       
+
+       
+
+     
     }
 
 
     public void Update()
     {
-    
+        
+
     }
 
     /// <summary>
@@ -64,10 +73,13 @@ public class BackGroundManager : MonoBehaviour
     {
         stopVideoPlay();
         m_RawImg.texture = tex;
+
+
     }
 
     private void stopVideoPlay()
     {
+
         if (videoState)
         {
             videoPlayer.Stop();
@@ -76,6 +88,7 @@ public class BackGroundManager : MonoBehaviour
                 targetTexture.Release();
 
             videoState = false;
+
         }
 
     }
@@ -88,12 +101,54 @@ public class BackGroundManager : MonoBehaviour
         videoPlayer.url = videoPath;
         videoPlayer.Play();
 
+
         if (targetTexture)
             targetTexture.Release();
+
+
         targetTexture = RenderTexture.GetTemporary(width, height, 16);
         videoPlayer.targetTexture = targetTexture;
         m_RawImg.texture = targetTexture;
+
+       
+
         videoState = true;
+
+
     }
     
+
+    public void saveBgTexture(string strFile)
+    {
+
+        RenderTexture rt = new RenderTexture(Screen.width, Screen.height, 0);
+        Camera.main.targetTexture = rt;
+        Camera.main.Render();
+        RenderTexture.active = rt;
+
+        Texture2D tex = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, true);
+
+        tex.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, true);//读像素
+        tex.Apply();
+
+        Camera.main.targetTexture = null;
+        RenderTexture.active = null;
+        Destroy(rt);
+
+
+        byte[] byt = tex.EncodeToPNG();
+
+        File.WriteAllBytes(strFile, byt);   //保存到  安卓手机的  DCIM/下的Camera   文件夹下
+        ScreenCapture.CaptureScreenshot(strFile+".png");
+
+
+
+        return;
+
+    }
+
+
+
+
+
 }
