@@ -97,6 +97,21 @@ public class standardmodelJson
 
 }
 
+/**********************************
+ 形象捏脸类型，用来解析json文件
+ **********************************/
+[Serializable]
+public class  tweakbsJson
+{
+    public string name;
+    public float  value;
+}
+[Serializable]
+public class tweakfaceJson
+{
+    public List<tweakbsJson> TweakBS;
+}
+
 [Serializable]
 /// <summary>
 /// 对性别的枚举定义
@@ -305,8 +320,13 @@ public enum AvatarID
     Err_model_skinmeshrender_count,
     Err_pta_file_noexist,
 
+    Err_tweak_file = 3000,         //捏脸文件有错误
+    Err_tweak_data,
+    Err_tweak_skmr,
+
+
     //场景录制
-    Err_camera_noexist = 3000,
+    Err_camera_noexist = 10000,
     Err_audio_noexist,
     Err_record_data,
 

@@ -152,6 +152,56 @@ public class SceneController : MonoBehaviour
         }
     }
 
+    /******************************************************************************************************
+
+     接口：形象捏脸 
+
+    *******************************************************************************************************/
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="strJsonFile">完整json文件</param>
+    /// <returns></returns>
+    /// 示例：
+    public void TweakFaceType(string strJsonFile)
+    {
+        bool res = false;
+        if (commonAvatarKits != null)
+        {
+            res = commonAvatarKits.tweakFace(strJsonFile);
+        }
+
+        if (res)
+            MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+
+        return;
+    }
+    public void TweakFaceSlider(string strJsonData)
+    {
+        bool res = false;
+        if (commonAvatarKits != null)
+        {
+            res = commonAvatarKits.tweakFaceSlider(strJsonData);
+        }
+
+        if (res)
+            MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+
+        return;
+    }
+
+    /// <summary>
+    /// 恢复脸型为默认脸型
+    /// </summary>
+    public void RestoreTweakFace(string strEmpty)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.restoreFace();
+        }
+
+    }
+
     /// <summary>
     /// 卸载场景,删除shader，以及与场景相关的资源
     /// </summary>

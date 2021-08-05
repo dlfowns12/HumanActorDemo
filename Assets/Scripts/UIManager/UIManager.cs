@@ -10,11 +10,17 @@ public class UIManager : MonoBehaviour
     UnityTest mTest=new UnityTest();
     SceneController sCtrl = null;
 
+
     string control_node_name = "SceneController";
+    
+    //记录捏脸次数
+    int facetypeRecord = 0;
+
     int iAnimCount;
 
     //旋转
     float rotateRd = 5.0f;
+
 
     public void Start()
     { 
@@ -60,6 +66,39 @@ public class UIManager : MonoBehaviour
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
         sCtrl.UnloadResource();
 
+    }
+
+    /***********************捏脸相关测试****************************/
+
+
+    //捏脸功能  测试
+    public void tweakface_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+   
+        if (facetypeRecord >= mTest.iFaceTypeNum)
+            facetypeRecord = 0;
+
+        if(false)
+          sCtrl.TweakFaceType(mTest.strFaceType[facetypeRecord]);
+        else
+        {
+            string strFace = File.ReadAllText(mTest.strFaceType[facetypeRecord]);
+
+            sCtrl.TweakFaceSlider(strFace);
+        }
+        
+        facetypeRecord = facetypeRecord + 1;
+    }
+
+    public void tweakface_restore_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.RestoreTweakFace("");
     }
 
     public void pta_click()

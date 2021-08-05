@@ -16,6 +16,11 @@ public class UnityTest
 
     public string testshader = rootDir + "shader/testshader";
 
+    /***************捏脸*****************/
+    public int iFaceTypeNum = 1;
+    public string[] strFaceType = {rootDir + "facetype/" + "face.json"};
+
+    
     //相机位置设置
     public string strCamFile        = rootDir + "cam.scene";
     public string strCamBgColorFile = rootDir + "cam_color.scene";

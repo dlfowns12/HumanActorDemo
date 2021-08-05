@@ -80,6 +80,10 @@ namespace Avatar3D
         public bool flag_avatar_load = false;
 
         /************模块对象定义***********************/
+        //**********捏脸对象
+        private TwistFace m_TwistFace;
+        private tweakfaceJson tweakApplyBSData = null;
+
         //**********动画对象
         private AnimControl m_AnimCtrl;
 
@@ -126,6 +130,10 @@ namespace Avatar3D
             m_AvatarHeadSK = new List<SkinnedMeshRenderer>();
             m_AvatarManager.vtList = new List<Vector3[]>();
             //****************************************************************************
+
+            //模块：捏脸
+            m_TwistFace = new TwistFace();
+
             //模块：场景管理之相机
             mCamManager = GameObject.Find(camera_node_name).GetComponent<CamManager>();
 
@@ -147,6 +155,8 @@ namespace Avatar3D
                 GameObject.Destroy(tmp.Value);
 
             m_AvatarManager = null;
+
+            m_TwistFace = null;
         }
 
 
@@ -397,6 +407,94 @@ namespace Avatar3D
             return true;
         }
 
+        /******************************************************************************************************
+
+            以下是虚拟形象捏脸相关的接口 
+
+         *******************************************************************************************************/
+        public bool tweakFace(string strJsonFile)
+        {
+            //step1:读取json文件
+            StreamReader sr = new StreamReader(strJsonFile);
+            string jsonStr = sr.ReadToEnd();
+
+            tweakfaceJson tweakBSJson = JsonUtility.FromJson<tweakfaceJson>(jsonStr);
+            if (tweakBSJson.TweakBS.Count == 0)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_tweak_file, AvatarID.Err_tweak_file.ToString());
+                return false;
+            }
+
+            if (m_AvatarHeadSK.Count < 2)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_tweak_skmr, AvatarID.Err_tweak_skmr.ToString());
+                return false;
+            }
+            //先恢复BS系数
+            //changeHeadBsValue(tweakBSJson, true);
+            //restoreFace();
+
+            //应用BS系数
+            changeHeadBsValue(tweakBSJson, false);
+
+            //tweakApplyBSData = tweakBSJson;
+            return true;
+        }
+        public bool tweakFaceSlider(string strJsonData)
+        {
+
+            tweakfaceJson tweakBSJson = JsonUtility.FromJson<tweakfaceJson>(strJsonData);
+            if (tweakBSJson.TweakBS.Count == 0)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_tweak_data, AvatarID.Err_tweak_data.ToString());
+                return false;
+            }
+
+            if (m_AvatarHeadSK.Count < 2)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_tweak_skmr, AvatarID.Err_tweak_skmr.ToString());
+                return false;
+            }
+
+
+            //应用BS系数
+            changeHeadBsValue(tweakBSJson, false);
+  
+            return true;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bsData"></param>
+        /// <param name="bRestore">如果为true:则恢复为默认脸型，false 则适用 传递数值</param>
+        public void changeHeadBsValue(tweakfaceJson bsData, bool bRestore)
+        {
+            for (int i = 0; i < bsData.TweakBS.Count; i++)
+            {
+                string bsName = bsData.TweakBS[i].name;
+                float value = 0.0f;
+                if (!bRestore)
+                    value = bsData.TweakBS[i].value;
+
+                for (int j = 0; j < m_AvatarHeadSK.Count; j++)
+                {
+                    int idx = m_AvatarHeadSK[j].sharedMesh.GetBlendShapeIndex(bsName);
+                    if (idx >= 0)
+                        m_TwistFace.SetBSWeight(idx, value, m_AvatarHeadSK[j]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 这个废弃掉，如果想恢复脸型，则采用配置文件的方式，不在支持
+        /// </summary>
+        public void restoreFace()
+        {
+            if (tweakApplyBSData != null)
+                changeHeadBsValue(tweakApplyBSData, true);
+        }
         public void genAvatar(string strJsonFile)
         {
             //step1: 读取生成的形象数据
