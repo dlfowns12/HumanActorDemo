@@ -16,10 +16,24 @@ public class UIManager : MonoBehaviour
     //记录捏脸次数
     int facetypeRecord = 0;
 
+    //换装次数
+    int isuit = 0;
+    int icloth = 0;
+    int ipant = 0;
+    int ishoe = 0;
+    int ihair = 0;
+    int ijhand = 0;
+    int ijneck = 0;
+    int iear = 0;
+    int iglass = 0;
+
+
     int iAnimCount;
 
     //旋转
     float rotateRd = 5.0f;
+
+    bool flag_load = false;
 
 
     public void Start()
@@ -34,6 +48,9 @@ public class UIManager : MonoBehaviour
 
         //test
         loadAvatar_click();
+
+        flag_load = true;
+
 
     }
 
@@ -99,6 +116,111 @@ public class UIManager : MonoBehaviour
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
 
         sCtrl.RestoreTweakFace("");
+    }
+
+    /***********************换装相关测试****************************/
+
+    //换装 功能测试
+
+    public void change_suit_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if (isuit >= mTest.iCostumeNum)
+            isuit = 0;
+        sCtrl.ChangePendant(mTest.strSuit[isuit]);
+        isuit = isuit + 1;
+
+    }
+    public void change_cloth_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if (icloth>= mTest.iCostumeNum)
+            icloth = 0;
+        sCtrl.ChangePendant(mTest.strCloth[icloth]);
+        icloth = icloth + 1;
+    }
+
+    //换裤子测试
+    public void change_pant_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (ipant >= mTest.iCostumeNum)
+            ipant = 0;
+        sCtrl.ChangePendant(mTest.strPant[ipant]);
+        ipant = ipant + 1;
+    }
+
+    public void unload_suit_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+    
+        sCtrl.UnloadPendant("suit");
+    
+    }
+
+    public void change_shoe_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (ishoe >= mTest.iCostumeNum)
+            ishoe = 0;
+        sCtrl.ChangePendant(mTest.strShoe[ishoe]);
+        ishoe = ishoe + 1;
+    }
+    public void change_hair_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (ihair >= mTest.iCostumeNum)
+            ihair = 0;
+        sCtrl.ChangePendant(mTest.strHair[ihair]);
+        ihair = ihair + 1;
+    }
+
+    public void change_jhand_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (ijhand >= mTest.iCostumeNum)
+            ijhand = 0;
+        sCtrl.ChangePendant(mTest.strJHand[ijhand]);
+        ijhand = ijhand + 1;
+    }
+
+    public void change_jneck_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (ijneck >= mTest.iCostumeNum)
+            ijneck = 0;
+        sCtrl.ChangePendant(mTest.strJNeck[ijneck]);
+        ijneck = ijneck + 1;
+    }
+
+    public void change_jear_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (iear >= mTest.iCostumeNum)
+            iear = 0;
+        sCtrl.ChangePendant(mTest.strJEar[iear]);
+        iear = iear + 1;
+    }
+
+    public void change_glass_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (iglass >= mTest.iCostumeNum)
+            iglass = 0;
+        sCtrl.ChangePendant(mTest.strGlass[iglass]);
+        iglass = iglass + 1;
     }
 
     public void pta_click()
@@ -257,5 +379,18 @@ public class UIManager : MonoBehaviour
         sCtrl.CaptureScreenToPNG("123");
 
     }
+
+
+    /**************************************************************/
+
+
+    public void export_glb_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ExportMeshToGLB("glb");
+    }
+
 
 }

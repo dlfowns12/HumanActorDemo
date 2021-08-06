@@ -20,6 +20,10 @@ public class AvatarManager
 
     public SkinnedMeshRenderer bodySKRender;
 
+    //配饰相关
+    public GameObject ConsumeRootNode;
+    public Dictionary<string, GameObject> costumeGo;
+
     //模型本身顶点数据  //按照 头、眉毛、睫毛、左眼、右眼、口腔的数据存放
     public List<Vector3[]> vtList;
 
@@ -70,4 +74,61 @@ public class AvatarManager
         }
     }
    
+}
+
+//换装插槽类型
+[Serializable]
+public enum slot_type
+{
+    slot_suit = 0,
+    slot_cloth,
+    slot_pant,
+    slot_shoe,
+    slot_sock,
+    slot_hair,
+    slot_glass,
+    slot_hat,
+    slot_neck,
+    slot_ear,
+    slot_bracelet,
+
+    count
+}
+
+/******************************************
+ 
+ 服饰配置文件中的slot名称 必须以下面的为准
+ 
+ ******************************************/
+[Serializable]
+public class slot_names
+{
+    public string slotSuit     = "suit";
+    public string slotCloth    = "cloth";
+    public string slotPant     = "pant";
+    public string slotShoe     = "shoe";
+    public string slotSock     = "sock";
+    public string slotHair     = "hair";
+    public string slotGlass    = "glass";
+    public string slotHat      = "hat";
+    public string slotNeck     = "neck";
+    public string slotEar      = "ear";
+    public string slotBracelet = "bracelet";
+}
+
+//给形象配饰预先分配 AssetBundle对象 
+[Serializable]
+public class consume_assetbunddle
+{
+    AssetBundle ab_suit;
+    AssetBundle ab_cloth;
+    AssetBundle ab_pant;
+    AssetBundle ab_shoe;
+    AssetBundle ab_sock;
+    AssetBundle ab_hair;
+    AssetBundle ab_glass;
+    AssetBundle ab_hat;
+    AssetBundle ab_neck;
+    AssetBundle ab_ear;
+    AssetBundle ab_bracelet;
 }

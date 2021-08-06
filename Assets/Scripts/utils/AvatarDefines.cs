@@ -73,6 +73,7 @@ public class standardmodelJson
 {
     public string name;
     public List<entityJson> entity;
+    public List<string> costume;
     public string abfile;
     public string sex;
     public string version;
@@ -111,6 +112,29 @@ public class tweakfaceJson
 {
     public List<tweakbsJson> TweakBS;
 }
+
+/**********************************
+ 形象换装类型，用来解析json文件
+ **********************************/
+[Serializable]
+public class exBoneParam
+{
+    public string name;
+    public string parent;
+}
+
+[Serializable]
+public class costumeJson
+{
+    public string entity;
+    public string slot;
+    public string abfile;
+    public string simfile;
+
+    public List<exBoneParam> exrootbone;
+   
+}
+
 
 [Serializable]
 /// <summary>
@@ -300,6 +324,56 @@ public class RecordWebPJson
     public int fps;
 }
 
+/**********************************
+布料物理仿真，用来解析json文件
+ **********************************/
+[Serializable]
+public class PosBase
+{
+    public float x;
+    public float y;
+    public float z;
+}
+
+[Serializable]
+public class ColliderBase
+{
+    public string  name;
+    public int     direction;
+    public PosBase center;
+    public float   radius;
+    public float   height;
+    public float   radius2;
+}
+[Serializable]
+public class BodyColliderJson
+{
+    public List<ColliderBase> collider;
+}
+
+[Serializable]
+public class CostumeSimParamJson
+{
+    public List<string> extraRoots;
+    public float updateRate;
+    public float damping;
+    public float elasticity;
+    public float stiffness;
+    public float inert;
+    public float friction;
+    public float radius;
+
+    public PosBase gravity;
+    public PosBase externalForce;
+    public float blendWeight;
+    public List<string> colliders;
+    public bool distantDisable;
+
+    public int distanceToObject;
+
+
+}
+
 /*******************************
 
 avatarkits 函数返回的结果类型定义
@@ -320,7 +394,14 @@ public enum AvatarID
     Err_model_skinmeshrender_count,
     Err_pta_file_noexist,
 
-    Err_tweak_file = 3000,         //捏脸文件有错误
+    Err_cloth_config = 3000,
+    Err_cloth_initial,
+    Err_cloth_slotname,
+    Err_cloth_abfile,
+    Err_cloth_repeatload,
+    Err_cloth_mesh_noexist,
+
+    Err_tweak_file = 4000,         //捏脸文件有错误
     Err_tweak_data,
     Err_tweak_skmr,
 
@@ -341,6 +422,9 @@ public enum AvatarID
     Err_webp_initial,
     Suc_webp_recording,
     Suc_webp_recording_stop,
+	
+	//物理仿真 
+    Err_cloth_param = 20000,
 
     Err_invalid_data
 }

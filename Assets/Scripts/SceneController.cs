@@ -202,6 +202,42 @@ public class SceneController : MonoBehaviour
 
     }
 
+
+    /******************************************************************************************************
+
+     接口：形象换装 
+
+    *******************************************************************************************************/
+    /// <summary>
+    /// 改变挂件(服饰类)
+    /// </summary>
+    /// <param name="strABfile"></param>
+    /// <returns></returns>
+    /// 
+    public void ChangePendant(string strABConfigFile)
+    {
+        bool res = false;
+        if (commonAvatarKits != null)
+        {
+
+            res = commonAvatarKits.changeCostume(strABConfigFile);
+        }
+
+        if (res)
+            MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+        return;
+    }
+    public void UnloadPendant(string strClothType)
+    {
+
+        bool res = false;
+        if (commonAvatarKits != null)
+           commonAvatarKits.unloadCostume(strClothType);
+
+        MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+
+    }
+
     /// <summary>
     /// 卸载场景,删除shader，以及与场景相关的资源
     /// </summary>
@@ -358,5 +394,21 @@ public class SceneController : MonoBehaviour
         if (commonAvatarKits != null)
             commonAvatarKits.stopRecordWebP();
     }
+
+    /******************************************************************************************************
+
+    以下是跟模型导出相关
+
+    *******************************************************************************************************/
+
+    public  void ExportMeshToGLB(string strFileName)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.exportGlb(strFileName);
+        }
+
+    }
+
 
 }

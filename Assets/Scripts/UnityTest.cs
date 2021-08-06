@@ -10,19 +10,45 @@ public class UnityTest
 {
 
     public bool flag_ardrive_test   = true;
+    public bool flag_cloth_sim_test = true;
+
 
     public static string rootDir = "C:/work/test/";
     public string model = rootDir + "model/test.scene";
-
     public string testshader = rootDir + "shader/testshader";
+
+
+    /***************换装*****************/
+    public int iCostumeNum = 1;
+
+    public string[] strSuit = {rootDir + "garments/" + "suit/config.scene"};
+
+    public string[] strCloth = {rootDir + "garments/" + "up/config.scene"};
+
+    public string[] strPant =  {rootDir + "garments/" + "pant/config.scene"};
+
+    public string[] strShoe = { rootDir + "garments/" + "shoe/config.scene"};
+
+    public string[] strHair = { rootDir + "garments/" + "hair/config.scene"};
+
+    public string[] strGlass = { rootDir + "garments/" + "glasses/config.scene"};
+
+    public string[] strJHand = { rootDir + "garments/" + "jhand/config.scene"};
+
+    public string[] strJNeck = { rootDir + "garments/" + "jneck/config.scene"};
+
+    public string[] strJEar = { rootDir + "garments/" + "jear/config.scene"};
+
 
     /***************捏脸*****************/
     public int iFaceTypeNum = 1;
+	
     public string[] strFaceType = {rootDir + "facetype/" + "face.json"};
 
     
     //相机位置设置
     public string strCamFile        = rootDir + "cam.scene";
+	
     public string strCamBgColorFile = rootDir + "cam_color.scene";
 
     public string genAvatarJFile = "C:/work/test/test.json";
@@ -36,12 +62,9 @@ public class UnityTest
 
     public string mp4file = rootDir + "record/mp4.json";
 
-
     public string bgImageFile = rootDir + "bg/img/config.scene";
 
     public string bgVideoFile = rootDir + "bg/vid/config.scene";
-
-
 
     public static void testLoadModel(SceneController sCtrl, string strModel, int sex)
     {

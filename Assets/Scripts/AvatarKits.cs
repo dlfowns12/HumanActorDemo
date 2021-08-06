@@ -5,8 +5,20 @@ using System.IO;
 using UnityEngine;
 
 
+using UniGLTF;
+using VRMShaders;
+
 /*
 MonoBehavior 类是不能被new出来，只能通过 Instantiate
+
+另外 关于ab资源包的卸载，记录加载资源包的对象，同类对象
+
+加载的时候，需要卸载之前的资源包，做到动态清理内存
+
+比如：上装，加载当前上装ab资源包，当更换服装时，需要将
+
+上装ab资源包卸载,避免内存持续增加
+
 */
 
 namespace Avatar3D
@@ -80,6 +92,8 @@ namespace Avatar3D
         public bool flag_avatar_load = false;
 
         /************模块对象定义***********************/
+        //**********换装对象
+        private Costume m_Costume;
         //**********捏脸对象
         private TwistFace m_TwistFace;
         private tweakfaceJson tweakApplyBSData = null;
@@ -94,6 +108,10 @@ namespace Avatar3D
         private float rollAngle;
         private Vector3 head_orig_rotation;
         private Transform head_root_bone_trans = null;
+
+
+        //*****物理仿真模块*******
+        private ClothSimulator m_ClothSim = null;
 
         // 简单头套
         private bool flag_ar_drive_update = false;
@@ -127,9 +145,13 @@ namespace Avatar3D
             m_AvatarManager = new AvatarManager();
             m_AvatarManager.meshGo = new Dictionary<string, GameObject>();
             m_AvatarManager.meshRender = new Dictionary<string, SkinnedMeshRenderer>();
+            m_AvatarManager.costumeGo = new Dictionary<string, GameObject>();
             m_AvatarHeadSK = new List<SkinnedMeshRenderer>();
             m_AvatarManager.vtList = new List<Vector3[]>();
             //****************************************************************************
+
+            //模块：换装
+            m_Costume = new Costume(scene_parent_node);
 
             //模块：捏脸
             m_TwistFace = new TwistFace();
@@ -145,6 +167,9 @@ namespace Avatar3D
             //模块：录制模块
             m_SRecorder = new SenceRecorder(mCamManager.gameObject);
 
+            //模块：物理仿真
+            m_ClothSim = new ClothSimulator();
+
         }
 
         public void unInstall()
@@ -152,6 +177,8 @@ namespace Avatar3D
             foreach (var tmp in m_AvatarManager.meshGo)
                 GameObject.Destroy(tmp.Value);
             foreach (var tmp in m_AvatarManager.meshRender)
+                GameObject.Destroy(tmp.Value);
+            foreach (var tmp in m_AvatarManager.costumeGo)
                 GameObject.Destroy(tmp.Value);
 
             m_AvatarManager = null;
@@ -183,16 +210,28 @@ namespace Avatar3D
                 return false;
             }
             //step2: 加载完形象之后，需要对其它模块进行初始化
+
+            //***********************换装模块初始化*********************************
+            if (m_AvatarBodySK.gameObject)
+                m_Costume.initial(m_AvatarBodySK.gameObject, m_AvatarManager.costumeGo, m_AvatarManager);
+
             //***********************动画模块初始化*********************************
             m_AnimCtrl.initial(m_AvatarManager.MeshRootNode);
 
             head_root_bone_trans = av_skHead.rootBone;
             head_orig_rotation = new Vector3(head_root_bone_trans.localEulerAngles.x, head_root_bone_trans.localEulerAngles.y, head_root_bone_trans.localEulerAngles.z);
 
+            //*********************************************************************
+
+            if (m_UnityTest.flag_cloth_sim_test)
+                m_ClothSim.initial(boneSimFile, m_AvatarManager);
+
 
             flag_avatar_load = true;
 
             /**************************/
+       
+
 
             return true;
         }
@@ -254,7 +293,7 @@ namespace Avatar3D
 
             standardmodelJson modeljson = JsonUtility.FromJson<standardmodelJson>(jsonStr);
 
-            if (modeljson.name == null|| modeljson.entity.Count <= 1)
+            if (modeljson.name == null || modeljson.costume.Count <= 1 || modeljson.entity.Count <= 1)
                 return false;
 
 
@@ -277,7 +316,19 @@ namespace Avatar3D
                 return false;
             m_AvatarManager.MeshRootNode.transform.SetParent(scene_parent_node.transform);
 
-            //step2:处理avatarManager 对象,获取entity相关信息
+            //step2: 处理avatarManager 对象,创建consume节点
+            m_AvatarManager.ConsumeRootNode = new GameObject("costume");
+            m_AvatarManager.ConsumeRootNode.transform.SetParent(m_AvatarManager.MeshRootNode.transform);
+
+
+            for (int i = 0; i < modeljson.costume.Count; i++)
+            {
+                GameObject obj = new GameObject(modeljson.costume[i]);
+                obj.transform.SetParent(m_AvatarManager.ConsumeRootNode.transform);
+                m_AvatarManager.costumeGo.Add(modeljson.costume[i], obj);
+            }
+
+            //step3:处理avatarManager 对象,获取entity相关信息
             for (int i = 0; i < modeljson.entity.Count; i++)
             {
                 string node = modeljson.entity[i].node;
@@ -378,6 +429,12 @@ namespace Avatar3D
 
             int headMatNum = av_skHead.sharedMaterials.Length;
 
+            if (headMatNum < 2)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_head_material_num, AvatarID.Err_head_material_num.ToString());
+                return true;
+            }
+
             Material[] headNormMat = new Material[headMatNum];
             for (int i = 0; i < headMatNum; i++)
                 headNormMat[i] = av_skHead.sharedMaterials[i];
@@ -405,6 +462,7 @@ namespace Avatar3D
 
       
             return true;
+
         }
 
         /******************************************************************************************************
@@ -495,6 +553,65 @@ namespace Avatar3D
             if (tweakApplyBSData != null)
                 changeHeadBsValue(tweakApplyBSData, true);
         }
+
+
+        /******************************************************************************************************
+
+         以下是跟虚拟形象换装相关的接口 
+
+         *******************************************************************************************************/
+        public bool changeCostume(string strConfigFile)
+        {
+
+           // Debug.Log(strConfigFile);
+            //step1:读取json文件
+            StreamReader sr = new StreamReader(strConfigFile);
+            if (sr == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_cloth_config, AvatarID.Err_cloth_config.ToString());
+                return false;
+
+            }
+
+        
+
+            string jsonStr = sr.ReadToEnd();
+            costumeJson costumeData = JsonUtility.FromJson<costumeJson>(jsonStr);
+            if (costumeData.abfile == null || costumeData.entity == null || costumeData.slot == null)
+            {
+
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_cloth_config, AvatarID.Err_cloth_config.ToString());
+                return false;
+            }
+
+            string rootDir = Path.GetDirectoryName(strConfigFile);
+            string abmodel_file = rootDir + "/" + costumeData.abfile;
+            string sim_file;
+
+          
+            if (costumeData.simfile == null)
+                sim_file = "";
+            else
+                sim_file = rootDir + "/" + costumeData.simfile;
+           
+            //恢复场景父节点旋转信息
+            //scene_parent_node.GetComponent<Transform>().rotation = new Quaternion(0.0f, 0.0f, 0.0f,1.0f);
+
+            bool res = m_Costume.changeCloth(abmodel_file, costumeData.entity, costumeData.slot, 
+                                              costumeData.exrootbone,sim_file,m_ClothSim);
+            if (res)
+                MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+
+
+            return true;
+        }
+
+        public void unloadCostume(string strClothType)
+        {
+            m_Costume.cancelCostume(strClothType);
+
+        }
+
         public void genAvatar(string strJsonFile)
         {
             //step1: 读取生成的形象数据
@@ -725,7 +842,9 @@ namespace Avatar3D
 
             Vector3 headAngle = new Vector3(-eulerAngles.x, eulerAngles.y - 180, -eulerAngles.z);
 
+
             setHeadGesture(headAngle.y, headAngle.z, headAngle.x + 360.0f);
+
 
             Quaternion qt = Quaternion.Euler(headAngle.y, headAngle.z, headAngle.x + 360.0f);
             Vector3 direction = new Vector3(0.0f, 0.0f, 0.0f);
@@ -979,5 +1098,31 @@ namespace Avatar3D
         {
             m_SRecorder.stopWebPRecord();
         }
+
+
+
+    /******************************************************************************************************
+
+     跟模型导出相关的一些接口
+
+     *******************************************************************************************************/
+       public void exportGlb(string strFileName)
+        {
+            GltfExportSettings Settings = new GltfExportSettings();
+            ExportingGltfData data = new ExportingGltfData();
+            gltfExporter exporter = new gltfExporter(data, Settings, null, null);
+
+            exporter.Prepare(scene_parent_node);
+
+            RuntimeTextureSerializer _runtimeSerializer = new RuntimeTextureSerializer();
+
+            exporter.Export(_runtimeSerializer);
+
+            var bytes = data.ToGlbBytes();
+            File.WriteAllBytes(strFileName + ".glb", bytes);
+            exporter.Dispose();
+
+        }
+
     }
 }
