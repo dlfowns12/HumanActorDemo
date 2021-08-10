@@ -98,6 +98,9 @@ namespace Avatar3D
         private TwistFace m_TwistFace;
         private tweakfaceJson tweakApplyBSData = null;
 
+        //**********美妆对象
+        private FaceMakeUp m_FaceMakeup;
+
         //**********动画对象
         private AnimControl m_AnimCtrl;
 
@@ -155,6 +158,9 @@ namespace Avatar3D
 
             //模块：捏脸
             m_TwistFace = new TwistFace();
+
+            //模块：美妆
+            m_FaceMakeup = new FaceMakeUp();
 
             //模块：场景管理之相机
             mCamManager = GameObject.Find(camera_node_name).GetComponent<CamManager>();
@@ -214,6 +220,11 @@ namespace Avatar3D
             //***********************换装模块初始化*********************************
             if (m_AvatarBodySK.gameObject)
                 m_Costume.initial(m_AvatarBodySK.gameObject, m_AvatarManager.costumeGo, m_AvatarManager);
+
+            //***********************美妆模块初始化*********************************
+
+            if (m_UnityTest.flag_makeup_enable)
+                m_FaceMakeup.initial(av_skHead, av_skEyel, av_skEyer,av_skEyelash,av_skBrow);
 
             //***********************动画模块初始化*********************************
             m_AnimCtrl.initial(m_AvatarManager.MeshRootNode);
@@ -611,9 +622,71 @@ namespace Avatar3D
             m_Costume.cancelCostume(strClothType);
 
         }
+        /******************************************************************************************************
+
+           以下是跟虚拟形象美化相关的接口   以及更改服饰颜色
+
+        *******************************************************************************************************/
+        public void changeMakeup(string strConfigFile)
+        {
+            //step1:读取json文件
+            StreamReader sr = new StreamReader(strConfigFile);
+            string jsonStr = sr.ReadToEnd();
+
+            makeupJson makeupData = JsonUtility.FromJson<makeupJson>(jsonStr);
+
+            if (makeupData.type == null || makeupData.image == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_makeup_config, AvatarID.Err_makeup_config.ToString());
+                return;
+            }
+
+            string rootDir = Path.GetDirectoryName(strConfigFile);
+            string image_file = rootDir + "/" + makeupData.image;
+
+            bool res = m_FaceMakeup.changeMakeUp(image_file, makeupData.type);
+
+            if (res)
+                MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+
+            return;
+        }
+        public void restoreMakeup(string MUType)
+        {
+            m_FaceMakeup.restoreMakeup(MUType);
+        }
+
+        public void changeCostumeColor(string strConfigFile)
+        {
+            //step1:读取json文件
+            StreamReader sr = new StreamReader(strConfigFile);
+            string jsonStr = sr.ReadToEnd();
+
+            makeupJson makeupData = JsonUtility.FromJson<makeupJson>(jsonStr);
+
+            if (makeupData.type == null || makeupData.image == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_makeup_config, AvatarID.Err_makeup_config.ToString());
+                return;
+            }
+
+            string rootDir = Path.GetDirectoryName(strConfigFile);
+            string image_file = rootDir + "/" + makeupData.image;
+
+            m_Costume.changeSlotColor(makeupData.type, image_file);
+
+        }
+
+
+
+
 
         public void genAvatar(string strJsonFile)
         {
+
+            if (!flag_avatar_load)
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_model_intial, AvatarID.Err_makeup_config.ToString());
+
             //step1: 读取生成的形象数据
             string usr_data = File.ReadAllText(strJsonFile);
             AvatarVertexData userData = JsonUtility.FromJson<AvatarVertexData>(usr_data);

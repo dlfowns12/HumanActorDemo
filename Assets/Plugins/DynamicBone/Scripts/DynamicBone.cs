@@ -29,7 +29,9 @@ public class DynamicBone : MonoBehaviour
         UnscaledTime,
         Default
     }
-    public UpdateMode m_UpdateMode = UpdateMode.Default;
+    //public UpdateMode m_UpdateMode = UpdateMode.Default;
+
+    public UpdateMode m_UpdateMode = UpdateMode.AnimatePhysics;
 
 #if UNITY_5_3_OR_NEWER
     [Tooltip("How much the bones slowed down.")]
@@ -197,6 +199,8 @@ public class DynamicBone : MonoBehaviour
     void Start()
     {
         SetupParticles();
+
+        m_UpdateMode = UpdateMode.AnimatePhysics;
     }
 
     void FixedUpdate()

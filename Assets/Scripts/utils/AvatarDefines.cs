@@ -135,6 +135,15 @@ public class costumeJson
    
 }
 
+/**********************************
+ 形象美妆类型，用来解析json文件
+ **********************************/
+[Serializable]
+public class makeupJson
+{
+    public string image;
+    public string type;
+}
 
 [Serializable]
 /// <summary>
@@ -404,6 +413,9 @@ public enum AvatarID
     Err_tweak_file = 4000,         //捏脸文件有错误
     Err_tweak_data,
     Err_tweak_skmr,
+
+    Err_makeup_intial = 5000,
+    Err_makeup_config,
 
 
     //场景录制

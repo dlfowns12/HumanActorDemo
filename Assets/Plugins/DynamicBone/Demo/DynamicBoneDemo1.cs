@@ -26,6 +26,12 @@ public class DynamicBoneDemo1 : MonoBehaviour
 
         y += h * 2;
         DynamicBone[] dbs = m_Player.GetComponents<DynamicBone>();
+
+        //Debug.Log("size:" + dbs.Length);
+        //for (int i = 0; i < dbs.Length; i++)
+        //    Debug.Log(dbs[i].name);
+
+
         GUI.Label(new Rect(x, y, w2, h), "Choose dynamic bone:");
         y += h;
         dbs[0].enabled = GUI.Toggle(new Rect(x, y, w1, h), dbs[0].enabled, "Breasts");

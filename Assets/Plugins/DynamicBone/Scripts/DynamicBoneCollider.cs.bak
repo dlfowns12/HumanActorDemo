@@ -3,9 +3,6 @@
 [AddComponentMenu("Dynamic Bone/Dynamic Bone Collider")]
 public class DynamicBoneCollider : DynamicBoneColliderBase
 {
-
- 
-
 #if UNITY_5_3_OR_NEWER
     [Tooltip("The radius of the sphere or capsule.")]
 #endif	
@@ -67,29 +64,21 @@ public class DynamicBoneCollider : DynamicBoneColliderBase
                 switch (m_Direction)
                 {
                     case Direction.X:
-                        c1.x += m_Height;
+                        c0.x += h;
+                        c1.x -= h;
                         break;
                     case Direction.Y:
-                        c1.y += m_Height;
+                        c0.y += h;
+                        c1.y -= h;
                         break;
                     case Direction.Z:
-                        c1.z += m_Height;
-                        break;
-                    case Direction.NX:
-                        c1.x -= m_Height;
-                        break;
-                    case Direction.NY:
-                        c1.y -= m_Height;
-                        break;
-                    case Direction.NZ:
-                        c1.z -= m_Height;
+                        c0.z += h;
+                        c1.z -= h;
                         break;
                 }
 
-                m_C0 = transform.TransformPoint(m_Center);
-                Vector3 mc1 = getC1Position(m_Center);
-
-                m_C1 = transform.TransformPoint(mc1);
+                m_C0 = transform.TransformPoint(c0);
+                m_C1 = transform.TransformPoint(c1);
                 m_C01Distance = (m_C1 - m_C0).magnitude;
 
                 if (m_Bound == Bound.Outside)
@@ -107,8 +96,6 @@ public class DynamicBoneCollider : DynamicBoneColliderBase
             float r = Mathf.Max(m_Radius, m_Radius2);
             if (halfHeight - r <= 0)
             {
-
- 
                 m_ScaledRadius = r * scale;
                 m_C0 = transform.TransformPoint(m_Center);
 
@@ -123,8 +110,6 @@ public class DynamicBoneCollider : DynamicBoneColliderBase
             }
             else
             {
-
-     
                 m_ScaledRadius = m_Radius * scale;
                 m_ScaledRadius2 = m_Radius2 * scale;
 
@@ -133,33 +118,24 @@ public class DynamicBoneCollider : DynamicBoneColliderBase
                 Vector3 c0 = m_Center;
                 Vector3 c1 = m_Center;
 
-
                 switch (m_Direction)
                 {
                     case Direction.X:
-                        c1.x += h0;
-                        break;
-                    case Direction.Y:
-                        c1.y += m_Height;
-                        break;
-                    case Direction.Z:
-                        c1.z += m_Height;
-                        break;
-                    case Direction.NX:
+                        c0.x += h0;
                         c1.x -= h1;
                         break;
-                    case Direction.NY:
-                        c1.y -= m_Height;
+                    case Direction.Y:
+                        c0.y += h0;
+                        c1.y -= h1;
                         break;
-                    case Direction.NZ:
-                        c1.z -= m_Height;
+                    case Direction.Z:
+                        c0.z += h0;
+                        c1.z -= h1;
                         break;
                 }
 
                 m_C0 = transform.TransformPoint(c0);
                 m_C1 = transform.TransformPoint(c1);
-
-
                 m_C01Distance = (m_C1 - m_C0).magnitude;
 
                 if (m_Bound == Bound.Outside)
@@ -173,32 +149,7 @@ public class DynamicBoneCollider : DynamicBoneColliderBase
             }
         }
     }
-    Vector3 getC1Position(Vector3 baseP)
-    {
-        Vector3 c1 = baseP;
-        switch (m_Direction)
-        {
-            case Direction.X:
-                c1.x += m_Height;
-                break;
-            case Direction.Y:
-                c1.y += m_Height;
-                break;
-            case Direction.Z:
-                c1.z += m_Height;
-                break;
-            case Direction.NX:
-                c1.x -= m_Height;
-                break;
-            case Direction.NY:
-                c1.y -= m_Height;
-                break;
-            case Direction.NZ:
-                c1.z -= m_Height;
-                break;
-        }
-        return c1;
-    }
+
     public override bool Collide(ref Vector3 particlePosition, float particleRadius)
     {
         switch (m_CollideType)
@@ -483,8 +434,6 @@ public class DynamicBoneCollider : DynamicBoneColliderBase
             Gizmos.color = Color.magenta;
         }
 
-
- 
         switch (m_CollideType)
         {
             case 0:
@@ -493,28 +442,19 @@ public class DynamicBoneCollider : DynamicBoneColliderBase
                 break;
             case 2:
             case 3:
-               // DrawCapsule(transform,m_C0, m_C1, m_ScaledRadius, m_ScaledRadius2);
-               // break;
+                DrawCapsule(m_C0, m_C1, m_ScaledRadius, m_ScaledRadius);
+                break;
             case 4:
             case 5:
-                DrawCapsule(transform,m_C0, m_C1, m_ScaledRadius, m_ScaledRadius2);
+                DrawCapsule(m_C0, m_C1, m_ScaledRadius, m_ScaledRadius2);
                 break;
         }
     }
 
-    static void DrawCapsule(Transform trs,Vector3 c0, Vector3 c1, float radius0, float radius1)
+    static void DrawCapsule(Vector3 c0, Vector3 c1, float radius0, float radius1)
     {
-        //Gizmos.DrawLine(c0, c1);
+        Gizmos.DrawLine(c0, c1);
         Gizmos.DrawWireSphere(c0, radius0);
         Gizmos.DrawWireSphere(c1, radius1);
-
-        Gizmos.DrawLine(trs.TransformPoint(trs.InverseTransformPoint(c0) + Vector3.up * radius0), trs.TransformPoint(trs.InverseTransformPoint(c1) + Vector3.up * radius1));
-        Gizmos.DrawLine(trs.TransformPoint(trs.InverseTransformPoint(c0) - Vector3.up * radius0), trs.TransformPoint(trs.InverseTransformPoint(c1) - Vector3.up * radius1));
-        Gizmos.DrawLine(trs.TransformPoint(trs.InverseTransformPoint(c0) + Vector3.forward * radius0), trs.TransformPoint(trs.InverseTransformPoint(c1) + Vector3.forward * radius1));
-        Gizmos.DrawLine(trs.TransformPoint(trs.InverseTransformPoint(c0) - Vector3.forward * radius0), trs.TransformPoint(trs.InverseTransformPoint(c1) - Vector3.forward * radius1));
-        Gizmos.DrawLine(trs.TransformPoint(trs.InverseTransformPoint(c0) + Vector3.right * radius0), trs.TransformPoint(trs.InverseTransformPoint(c1) + Vector3.right * radius1));
-        Gizmos.DrawLine(trs.TransformPoint(trs.InverseTransformPoint(c0) - Vector3.right * radius0), trs.TransformPoint(trs.InverseTransformPoint(c1) - Vector3.right * radius1));
-
-
     }
 }

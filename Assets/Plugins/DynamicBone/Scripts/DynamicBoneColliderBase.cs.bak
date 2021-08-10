@@ -4,7 +4,7 @@ public class DynamicBoneColliderBase : MonoBehaviour
 {
     public enum Direction
     {
-        X, NX, Y, NY, Z, NZ
+        X, Y, Z
     }
 
 #if UNITY_5_3_OR_NEWER

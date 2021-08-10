@@ -9,12 +9,14 @@ using UnityEngine;
 public class UnityTest
 {
 
+    public bool flag_makeup_enable  = false;
     public bool flag_ardrive_test   = true;
     public bool flag_cloth_sim_test = true;
 
 
     public static string rootDir = "C:/work/test/";
     public string model = rootDir + "model/test.scene";
+
     public string testshader = rootDir + "shader/testshader";
 
 
@@ -33,22 +35,44 @@ public class UnityTest
 
     public string[] strGlass = { rootDir + "garments/" + "glasses/config.scene"};
 
+
     public string[] strJHand = { rootDir + "garments/" + "jhand/config.scene"};
 
     public string[] strJNeck = { rootDir + "garments/" + "jneck/config.scene"};
+
 
     public string[] strJEar = { rootDir + "garments/" + "jear/config.scene"};
 
 
     /***************捏脸*****************/
     public int iFaceTypeNum = 1;
-	
     public string[] strFaceType = {rootDir + "facetype/" + "face.json"};
 
-    
+    /***************美装*****************/
+    public int iMakeupNum = 1;
+
+    public string[] strBeardMU = {  rootDir + "makeup/beard/" + "config.scene"};
+
+    public string[] strPupilMU = { rootDir + "makeup/eyeball/" + "config.scene"};
+
+    public string[] strEyeShadowMU = { rootDir + "makeup/eyeline/" + "config.scene"};
+
+    public string[] strLipMU = {rootDir + "makeup/lipstick/" + "config.scene"};
+
+
+    public string[] strFaceMU = { rootDir + "makeup/rouge/" + "config.scene"};
+
+
+    public string[] strEyeLashMU = { rootDir + "makeup/eyelash/" + "config.scene"};
+
+    public string[] strEyeBrowMU = { rootDir + "makeup/eyebrow/"   + "config.scene"};
+
+
+
+    public string[] strHairMap = { rootDir + "makeup/hair/" + "config.scene"};
+
     //相机位置设置
     public string strCamFile        = rootDir + "cam.scene";
-	
     public string strCamBgColorFile = rootDir + "cam_color.scene";
 
     public string genAvatarJFile = "C:/work/test/test.json";
@@ -62,9 +86,12 @@ public class UnityTest
 
     public string mp4file = rootDir + "record/mp4.json";
 
+
     public string bgImageFile = rootDir + "bg/img/config.scene";
 
     public string bgVideoFile = rootDir + "bg/vid/config.scene";
+
+
 
     public static void testLoadModel(SceneController sCtrl, string strModel, int sex)
     {

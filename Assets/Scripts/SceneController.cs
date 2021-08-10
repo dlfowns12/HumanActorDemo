@@ -238,6 +238,37 @@ public class SceneController : MonoBehaviour
 
     }
 
+
+    /******************************************************************************************************
+
+     接口：形象美化 & 以及服饰资源换色
+
+    *******************************************************************************************************/
+    /// <summary>
+    /// 改变妆容
+    /// </summary>
+    /// <param name="strConfigFile"></param>
+    /// <returns></returns>
+    public void ChangeMakeup(string strConfigFile)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.changeMakeup(strConfigFile);
+
+        return;
+    }
+    public void RestoreMakeup(string MUType)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.restoreMakeup(MUType);
+
+    }
+
+    public void ChangePendantColor(string strConfigFile)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.changeCostumeColor(strConfigFile);
+    }
+
     /// <summary>
     /// 卸载场景,删除shader，以及与场景相关的资源
     /// </summary>

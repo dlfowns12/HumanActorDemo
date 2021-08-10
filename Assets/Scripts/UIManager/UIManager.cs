@@ -25,8 +25,11 @@ public class UIManager : MonoBehaviour
     int ijhand = 0;
     int ijneck = 0;
     int iear = 0;
+
     int iglass = 0;
 
+    //美妆次数
+    int[] iMakeup = new int[5] {0, 0, 0, 0, 0 };
 
     int iAnimCount;
 
@@ -221,6 +224,134 @@ public class UIManager : MonoBehaviour
             iglass = 0;
         sCtrl.ChangePendant(mTest.strGlass[iglass]);
         iglass = iglass + 1;
+    }
+
+
+
+    /***********************美妆相关测试****************************/
+    public void face_makeup_click()
+    {
+        int iMkType = 0;
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ChangeMakeup(mTest.strFaceMU[iMakeup[iMkType]]);
+        iMakeup[iMkType] = iMakeup[iMkType] + 1;
+
+    }
+
+    public void eyeshadow_makeup_click()
+    {
+
+        int iMkType = 1;
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ChangeMakeup(mTest.strEyeShadowMU[iMakeup[iMkType]]);
+        iMakeup[iMkType] = iMakeup[iMkType] + 1;
+
+        if (iMakeup[iMkType] >= mTest.iMakeupNum)
+            iMakeup[iMkType] = 0;
+
+    }
+
+    public void lip_makeup_click()
+    {
+        int iMkType = 2;
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if (iMakeup[iMkType] >= mTest.iMakeupNum)
+            iMakeup[iMkType] = 0;
+
+        sCtrl.ChangeMakeup(mTest.strLipMU[iMakeup[iMkType]]);
+        iMakeup[iMkType] = iMakeup[iMkType] + 1;
+
+    }
+    public void beard_makeup_click()
+    {
+        int iMkType = 3;
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (iMakeup[iMkType] >= mTest.iMakeupNum)
+        {
+            sCtrl.RestoreMakeup("mbeard");
+            iMakeup[iMkType] = 0;
+            return;
+        }
+
+        sCtrl.ChangeMakeup(mTest.strBeardMU[iMakeup[iMkType]]);
+        iMakeup[iMkType] = iMakeup[iMkType] + 1;
+
+        
+
+    }
+    public void pupil_makeup_click()
+    {
+        int iMkType = 4;
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        if (iMakeup[iMkType] >= mTest.iMakeupNum)
+        {
+            sCtrl.RestoreMakeup("mpupil");
+            iMakeup[iMkType] = 0;
+            return;
+        }
+        sCtrl.ChangeMakeup(mTest.strPupilMU[iMakeup[iMkType]]);
+        iMakeup[iMkType] = iMakeup[iMkType] + 1;
+
+    }
+
+    int iEyeLashCount = 0;
+    public void eyeslash_makeup_click()
+    {
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ChangeMakeup(mTest.strEyeLashMU[iEyeLashCount]);
+        iEyeLashCount++;
+
+        if(iEyeLashCount>= mTest.strEyeLashMU.Length)
+           iEyeLashCount = 0;
+
+    }
+
+    int iEyeBrowCount = 0;
+    public void eyebrow_makeup_click()
+    {
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ChangeMakeup(mTest.strEyeBrowMU[iEyeBrowCount]);
+        iEyeBrowCount++;
+
+        if (iEyeBrowCount >= mTest.strEyeBrowMU.Length)
+            iEyeBrowCount = 0;
+
+    }
+
+    /**************************
+
+    换色
+    ***************************/
+    int iHairColorCount = 0;
+    public void change_hair_color_click()
+    {
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.ChangePendantColor(mTest.strHairMap[iHairColorCount]);
+        iHairColorCount++;
+
+        if (iHairColorCount >= mTest.strHairMap.Length)
+            iHairColorCount = 0;
+
     }
 
     public void pta_click()
