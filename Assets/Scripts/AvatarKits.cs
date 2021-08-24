@@ -849,7 +849,32 @@ namespace Avatar3D
         }
 
 
+        public void setSceneLight(string strJsonFile)
+        {
+            if (mLightGo == null)
+                return;
 
+            string strLightData = File.ReadAllText(strJsonFile);
+            CamParam lightData = JsonUtility.FromJson<CamParam>(strLightData);
+
+            if (lightData == null)
+                return;
+
+            mLightGo.GetComponent<Transform>().localPosition = new Vector3(lightData.distx, lightData.disty, lightData.distz);
+
+            //mLightGo.GetComponent<Transform>().localRotation = Quaternion.Euler(150,360,90);
+
+            mLightGo.GetComponent<Transform>().localRotation = Quaternion.EulerAngles(new Vector3(3.14f * lightData.rotx / 180.0f,
+                                                                                                  3.14f * lightData.roty / 180.0f,
+                                                                                                  3.14f * lightData.rotz / 180.0f));
+
+
+
+            MsgEvent.SendCallBackMsg((int)AvatarID.Suc_light_set, AvatarID.Suc_light_set.ToString());
+
+        }
+
+ 
         public void setHeadGesture(float pitchx, float yawy, float rollz)
         {
             pitchAngle = pitchx;

@@ -283,6 +283,23 @@ public class FaceARMultiJson
     public List<FaceARJson> list;
 }
 
+[Serializable]
+public class CameraTextureJson
+{
+    public int width;
+    public int height;
+    public int canvasWidth;   //上层显示画布大小
+    public int canvasHeight;  //上层显示画布大小
+    public long textureid;   //int类型在ios上会报错
+}
+
+[Serializable]
+public class BackGroundTextureJson
+{
+    public string name;
+    public int    width;
+    public int    height;
+}
 
 [Serializable] 
 public class AnimationJson
@@ -417,6 +434,16 @@ public enum AvatarID
     Err_makeup_intial = 5000,
     Err_makeup_config,
 
+    //背景相关
+    Err_background_set = 8000,
+    Suc_light_set,
+
+    //相机纹理绑定
+    Suc_camera_bind = 9000,
+    Suc_camera_texture_bind,
+    Err_camera_bind,
+
+    Suc_Background_texture,
 
     //场景录制
     Err_camera_noexist = 10000,

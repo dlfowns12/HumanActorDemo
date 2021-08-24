@@ -34,7 +34,7 @@ public class UIManager : MonoBehaviour
     int iAnimCount;
 
     //旋转
-    float rotateRd = 5.0f;
+    //float rotateRd = 0.0f;
 
     bool flag_load = false;
 
@@ -363,26 +363,67 @@ public class UIManager : MonoBehaviour
     }
 
     //相机设置
+
+
     int camSetCount = 0;
     public void cam_set_click()
     {
         if (!sCtrl)
             sCtrl = GameObject.Find("SceneController").GetComponent<SceneController>();
 
-        if(camSetCount==0)
+        bool flag_set = false;
+        if (!flag_set)
+        {  if(camSetCount==0)
             sCtrl.SetCamera(mTest.strCamFile);
-        else
-            sCtrl.SetCamera(mTest.strCamFile);
+            else
+                sCtrl.SetCamera(mTest.strCamFile);
 
-        camSetCount++;
-        if (camSetCount >= 2)
-            camSetCount = 0;
+            camSetCount++;
+            if (camSetCount >= 2)
+                camSetCount = 0;
+        }
+        else
+            sCtrl.SetSceneBackgroundHtmlStringColor("#BB86FC");
+        
+    }
+
+    //相机设置
+
+    public void light_set_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find("SceneController").GetComponent<SceneController>();
+
+        sCtrl.SetSceneLight(mTest.strLightFile);
+
+    }
+
+
+    //背景设置
+    public void background_set_click()
+    {
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find("SceneController").GetComponent<SceneController>();
+
+        sCtrl.SetSceneBackgroundImage(mTest.bgImageFile);
+    }
+
+    public void background_video_set_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find("SceneController").GetComponent<SceneController>();
+
+
+        sCtrl.SetSceneBackgroundVideo(mTest.bgVideoFile);
+
     }
 
     public void rotate_avatar_left_click()
     {
         if (!sCtrl)
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        string rotateRd = "5";
         sCtrl.RotateAvatar(rotateRd);
     }
 
@@ -390,10 +431,14 @@ public class UIManager : MonoBehaviour
     {
         if (!sCtrl)
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
-        sCtrl.RotateAvatar(rotateRd * -1);
+        string rotateRd = "-5";
+        sCtrl.RotateAvatar(rotateRd);
     }
 
 
+    float total_time = 0.0f;
+    int fileIndex = 60;
+    int interval = 0;
     string strFaceArData = "";
     FaceARMultiJson strFaceArMultiData;
     int tNum = 0;
@@ -425,6 +470,9 @@ public class UIManager : MonoBehaviour
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
 
         sCtrl.ArFaceDriveEnable("enable");
+        if (mTest.flag_ardrive_test)
+            sCtrl.BindCameraTexture("enable");
+
     }
     public void face_ar_drive_off_click()
     {

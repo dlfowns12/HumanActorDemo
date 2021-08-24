@@ -11,6 +11,7 @@ public class SceneController : MonoBehaviour
 
     UnityTest m_UnityTest = new UnityTest();
 
+
     private AvatarKits commonAvatarKits = null;
 
     private SexType m_sexType;
@@ -23,8 +24,13 @@ public class SceneController : MonoBehaviour
     private string background_canvas_name  = "BgCanvas";
     private string camera_node_name = "Main Camera";
 
+
+
     private GameObject sceneParentGO;
+
+
     private Texture2D cameraTexture;
+
     private bool flag_ar_drive_enable = false;
 
     /**************************/
@@ -32,6 +38,8 @@ public class SceneController : MonoBehaviour
     //跟背景相关的
     private BackGroundManager m_BGObj = null;
     private CamManager        m_CamManager = null;
+
+
 
     /************************/
     private void Awake()
@@ -239,6 +247,8 @@ public class SceneController : MonoBehaviour
     }
 
 
+
+
     /******************************************************************************************************
 
      接口：形象美化 & 以及服饰资源换色
@@ -269,6 +279,13 @@ public class SceneController : MonoBehaviour
             commonAvatarKits.changeCostumeColor(strConfigFile);
     }
 
+
+
+    /******************************************************************************************************
+
+    以下是跟场景相关的接口    《 相机  灯光 》 
+
+    *******************************************************************************************************/
     /// <summary>
     /// 卸载场景,删除shader，以及与场景相关的资源
     /// </summary>
@@ -277,6 +294,95 @@ public class SceneController : MonoBehaviour
         UnloadResource();
     }
 
+    public void SetSceneBackgroundImage2(string jpgFile)
+    {
+        if (commonAvatarKits != null)
+        {
+            Texture2D tx = new Texture2D(1080, 1920);
+            FileStream files = new FileStream(jpgFile, FileMode.Open);
+            byte[] imgByte = new byte[files.Length];
+            files.Read(imgByte, 0, imgByte.Length);
+            files.Close();
+            if (imgByte.Length > 0)
+            {
+                tx.LoadImage(imgByte);
+                m_BGObj.setBackGroundTexture(tx);
+                MsgEvent.SendCallBackMsg((int)AvatarID.Suc_camera_texture_bind, AvatarID.Suc_camera_texture_bind.ToString());
+            }
+        }
+    }
+
+    /// <summary>
+    /// 设定背景
+    /// </summary>
+    public void SetSceneBackgroundColor(string strJsonFile)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.setCameraBackgroundColor(strJsonFile);
+        }
+    }
+
+    /// <summary>
+    /// 参数为 "#FFF7F4" 形式
+    /// </summary>
+    /// <param name="HtmlStringColor"></param>
+    public void SetSceneBackgroundHtmlStringColor(string HtmlStringColor)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.setCameraBackgroundHtmlStringColor(HtmlStringColor);
+        }
+    }
+
+    public void SetSceneLight(string strJsonFile)
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.setSceneLight(strJsonFile);
+
+    }
+
+    public void SetSceneBackgroundImage(string strJsonFile)
+    {
+        if (commonAvatarKits != null)
+        {
+            string strJsonData = File.ReadAllText(strJsonFile);
+            BackGroundTextureJson textureData = JsonUtility.FromJson<BackGroundTextureJson>(strJsonData);
+            Texture2D tx = new Texture2D(textureData.width, textureData.height);
+            string rootDir = Path.GetDirectoryName(strJsonFile);
+            string image_file = rootDir + "/" + textureData.name;
+
+           
+
+            FileStream files = new FileStream(image_file, FileMode.Open);
+            byte[] imgByte = new byte[files.Length];
+            files.Read(imgByte, 0, imgByte.Length);
+            files.Close();
+            if(imgByte.Length >0)
+            {
+                tx.LoadImage(imgByte);
+                m_BGObj.setBackGroundTexture(tx);
+                MsgEvent.SendCallBackMsg((int)AvatarID.Suc_camera_texture_bind, AvatarID.Suc_camera_texture_bind.ToString());
+            }
+        }
+    }
+
+    public void SetSceneBackgroundVideo(string strJsonFile)
+    {
+        if (commonAvatarKits != null)
+        {
+            string strJsonData = File.ReadAllText(strJsonFile);
+            BackGroundTextureJson textureData = JsonUtility.FromJson<BackGroundTextureJson>(strJsonData);
+
+            string rootDir    = Path.GetDirectoryName(strJsonFile);
+            string video_file = rootDir + "/" + textureData.name;
+
+
+            m_BGObj.setBackGroundTextureFromVideo(video_file,textureData.width,textureData.height);
+
+        }
+
+    }
 
     /******************************************************************************************************
 
@@ -311,11 +417,12 @@ public class SceneController : MonoBehaviour
 
     }
 
-    public void RotateAvatar(float dist)
+    public void RotateAvatar(string dist)
     {
         if (commonAvatarKits != null)
         {
-            commonAvatarKits.rotateAvatar(dist);
+            float dst = float.Parse(dist);
+            commonAvatarKits.rotateAvatar(dst);
         }
     }
  
@@ -336,6 +443,7 @@ public class SceneController : MonoBehaviour
         {
             flag_ar_drive_enable = true;
             commonAvatarKits.setAvatarBodyHide();
+            MsgEvent.SendCallBackMsg((int)AvatarID.Suc_camera_bind, AvatarID.Suc_camera_bind.ToString());
         }
     }
 
@@ -348,6 +456,7 @@ public class SceneController : MonoBehaviour
             commonAvatarKits.mCamManager.restoreCameraSet();
             commonAvatarKits.restoreAvatarShow();
             commonAvatarKits.setAvatarShow("1");
+            m_BGObj.restoreBackGroundTexture();
 
         }
     }
@@ -361,6 +470,46 @@ public class SceneController : MonoBehaviour
     {
         if (commonAvatarKits != null)
             commonAvatarKits.setAvatarShow(strShow);
+
+    }
+
+    public void BindCameraTexture(string dataJson)
+    {
+        if (m_UnityTest.flag_ardrive_test)
+        {
+
+            int width = m_CamManager.refCanvasWidth;
+            int height = m_CamManager.refCanvasHeight;
+           // Texture2D tex = Resources.Load<Texture2D>("Textures/1669173194466");
+            Texture2D tex = Resources.Load<Texture2D>("Textures/19116");
+            //cameraTexture = Texture2D.CreateExternalTexture(1080, 1920, TextureFormat.RGBA32, false, false, (IntPtr)tex.GetNativeTexturePtr());
+            cameraTexture = Texture2D.CreateExternalTexture(width, height, TextureFormat.RGBA32, false, false, (IntPtr)tex.GetNativeTexturePtr());
+
+            m_BGObj.bgCanvasWidth = width;
+            m_BGObj.bgCanvasHeight = height;
+
+
+        }
+        else
+        {
+            CameraTextureJson textureData = JsonUtility.FromJson<CameraTextureJson>(dataJson);
+            cameraTexture = Texture2D.CreateExternalTexture(textureData.width, textureData.height, TextureFormat.RGBA32, false, false, (IntPtr)textureData.textureid);
+
+            m_BGObj.bgCanvasWidth  = textureData.canvasWidth;
+            m_BGObj.bgCanvasHeight = textureData.canvasHeight;
+
+
+        }
+        m_BGObj.setBackGroundTexture(cameraTexture);
+        MsgEvent.SendCallBackMsg((int)AvatarID.Suc_camera_texture_bind, AvatarID.Suc_camera_texture_bind.ToString());
+
+    }
+
+
+
+    public void savebgToPng(string strFileName)
+    {
+        m_BGObj.saveBgTexture(strFileName);
 
     }
 

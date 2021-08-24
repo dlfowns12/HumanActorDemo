@@ -75,6 +75,9 @@ public class UnityTest
     public string strCamFile        = rootDir + "cam.scene";
     public string strCamBgColorFile = rootDir + "cam_color.scene";
 
+    //µ∆π‚…Ë÷√
+    public string strLightFile = rootDir + "light.scene";
+
     public string genAvatarJFile = "C:/work/test/test.json";
 
     public string[] arDriveJsonFile = { rootDir + "ardrive/test.json"};
