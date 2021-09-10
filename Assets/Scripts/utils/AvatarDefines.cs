@@ -208,6 +208,48 @@ public enum ResID
         Err_invalid_data                     // 出错：非法数据
 };
 
+
+
+
+
+/**********************************
+ STA文件定义，用来解析json文件
+ **********************************/
+[Serializable]
+public class FrameBSInfo
+{
+    public string name;
+    public float value;
+}
+[Serializable]
+public class FrameBSParam
+{
+    public List<float> data;
+
+}
+[Serializable]
+public class StaParamJson
+{
+
+    public string             audioFilePath;
+    public string             audioFileType;
+    public int                frameRate;
+    public List<string>       bsNameList;
+    public List<FrameBSParam> audioFrames;
+
+    public string             audioClipText;
+}
+[Serializable]
+public enum StaPlayStateControl
+{
+    Play = 0,
+    Stop,
+    Pause,
+    UnPause,
+
+    count
+}
+
 [Serializable]
 public class NameMapInfo
 {
@@ -222,6 +264,11 @@ public class NameMapInfo2
     public string mapname;
     public string type;
 }
+[Serializable]
+public class EmotionBSJson
+{
+    public List<NameMapInfo>  EmotionBSMap;
+}
 
 [Serializable]
 public class BoneMapJson
@@ -230,7 +277,7 @@ public class BoneMapJson
 }
 
 /**********************************
- 用来解析json文件
+ 表情驱动定义，用来解析json文件
  **********************************/
 [Serializable]
 public class KeyPointInfo
@@ -246,41 +293,75 @@ public class AngleInfo
     public float rollAngle;
 }
 
+/// <summary>
+/// 用于表情的BS信息
+/// </summary>
+[Serializable]
+public class EmBSInfo
+{
+    public string name;
+    public float  value;
+}
+
 [Serializable]
 public class ARJson
 {
     public float[] camMatrix;
     public float[] poseMatrix;
+
     public float headScale;
 
 }
 
 
+
 [Serializable]
 public class FaceARJson
 {
+    public List<EmBSInfo>      aiFaceExpress;
     public AngleInfo           headAttitudeAngle;
 
     public int nCamWidth;    //摄像头宽度
     public int nCamHeight;   //摄像头高度
 
     public int nFaceWidth;
+
     public int nFaceCenterX;  //记录人脸中心点（纵向）
     public int nFaceCenterY;  //记录人脸中心点（纵向）
+
 
     public float[] camMatrix;
     public float[] poseMatrix;
 
     public float headScale;
+
+
 }
 
 /// <summary>
-/// ar数据类型
+/// 这个是用于多帧ar驱动数据测试的数据类型
 /// </summary>
 [Serializable]
 public class FaceARMultiJson
 {
     public List<FaceARJson> list;
+}
+
+
+[Serializable]
+public class FaceExpressJson
+{
+    public List<EmBSInfo>  aiFaceExpress;
+    public AngleInfo       headAttitudeAngle;
+}
+
+/// <summary>
+/// 这个是用于多帧ar驱动数据测试的数据类型
+/// </summary>
+[Serializable]
+public class FaceExpressMultiJson
+{
+    public List<FaceExpressJson> list;
 }
 
 [Serializable]
@@ -291,6 +372,8 @@ public class CameraTextureJson
     public int canvasWidth;   //上层显示画布大小
     public int canvasHeight;  //上层显示画布大小
     public long textureid;   //int类型在ios上会报错
+
+
 }
 
 [Serializable]
@@ -308,6 +391,8 @@ public class AnimationJson
     public int    isloop;
     public float  speed;
 }
+
+
 
 /**********************************
 录制功能定义，用来解析json文件
@@ -400,6 +485,8 @@ public class CostumeSimParamJson
 
 }
 
+
+
 /*******************************
 
 avatarkits 函数返回的结果类型定义
@@ -433,6 +520,20 @@ public enum AvatarID
 
     Err_makeup_intial = 5000,
     Err_makeup_config,
+
+    //sta相关
+    Err_sta_file = 6000,
+    Err_sta_control_outindex,
+    Err_embs_map_file,
+
+    Suc_sta_text = 6003,
+    Suc_sta_idle = 6004,
+
+
+    //驱动相关
+    Err_emotion_initial = 7000,
+    Err_ardrive_data,
+
 
     //背景相关
     Err_background_set = 8000,

@@ -31,6 +31,9 @@ public class SceneController : MonoBehaviour
 
     private Texture2D cameraTexture;
 
+    /********驱动开关 标志***********/
+
+    private bool flag_emotion_drive_enable = false;
     private bool flag_ar_drive_enable = false;
 
     /**************************/
@@ -79,12 +82,30 @@ public class SceneController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (flag_ar_drive_enable)
+        //会做一些判断，用于实时的一些功能，必须面部实时驱动
+        if (flag_emotion_drive_enable || flag_ar_drive_enable)
         {
             if (commonAvatarKits != null)
                 commonAvatarKits.Update();
         }
     }
+
+    //private void FixedUpdate()
+    //{
+
+    //}
+
+    //private void LateUpdate()
+    //{
+    //    //会做一些判断，用于实时的一些功能，必须面部实时驱动
+    //    if (flag_emotion_drive_enable || flag_ar_drive_enable)
+    //    {
+    //        if (commonAvatarKits != null)
+    //            commonAvatarKits.Update();
+    //    }
+
+    //}
+
 
 
     /******************************************************************************************************
@@ -210,6 +231,11 @@ public class SceneController : MonoBehaviour
 
     }
 
+    public void ExportHeadEmotionBSMap()
+    {
+        if (commonAvatarKits != null)
+            commonAvatarKits.exportEmotionBSMapFile();
+    }
 
     /******************************************************************************************************
 
@@ -425,7 +451,75 @@ public class SceneController : MonoBehaviour
             commonAvatarKits.rotateAvatar(dst);
         }
     }
- 
+    /******************************************************************************************************
+
+    以下是跟STA相关的功能接口
+
+    *******************************************************************************************************/
+    public void EnableStaFunction(string strEmpty)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.enableSta(this, this.gameObject);
+
+        }
+    }
+
+    public void StaWork(string strStaJson)
+    {
+
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.playAudio(strStaJson);
+        }
+
+    }
+
+    //"0": 播放；"1"：停止；"2"：暂停；"3"：恢复
+    public void StaPlayControl(string strControl)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.playControl(strControl);
+        }
+    }
+    public void GetStaPlayState(string strEmpty)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.getStaPlayState();
+        }
+    }
+
+    /******************************************************************************************************
+
+    以下是跟 驱动相关的功能接口  (实时驱动)
+
+    *******************************************************************************************************/
+
+    public void EmotionRealDrive(string faceBSJson)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.faceExpressDrive(faceBSJson);
+
+            if (!flag_emotion_drive_enable)
+                flag_emotion_drive_enable = true;
+        }
+
+    }
+
+    public void EmotionRealDriveOff(string strRestore)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.faceExpressDriveRestore();
+
+            if (flag_emotion_drive_enable)
+                flag_emotion_drive_enable = false;
+        }
+    }
+
     /// <summary>
     /// AR虚拟形象驱动
     /// </summary>
@@ -434,7 +528,9 @@ public class SceneController : MonoBehaviour
     {
         if (commonAvatarKits != null && flag_ar_drive_enable)
         {
+           // commonAvatarKits.faceArDrive(arJson);
             commonAvatarKits.faceArDrive2(arJson);
+
         }
     }
     public void ArFaceDriveEnable(string strEnable)
@@ -442,7 +538,11 @@ public class SceneController : MonoBehaviour
         if (commonAvatarKits != null)
         {
             flag_ar_drive_enable = true;
+
+            //method1:用该方案
+          //  commonAvatarKits.mCamManager.setCameraToOrthographic();
             commonAvatarKits.setAvatarBodyHide();
+
             MsgEvent.SendCallBackMsg((int)AvatarID.Suc_camera_bind, AvatarID.Suc_camera_bind.ToString());
         }
     }

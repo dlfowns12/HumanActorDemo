@@ -80,10 +80,26 @@ public class UnityTest
 
     public string genAvatarJFile = "C:/work/test/test.json";
 
+
+    public string[] staTestJsonFile = {  rootDir + "asr/test.json"};
+
+
+
+    public string[] faceExpressTestJsonFile = { "C:/work/test/express/test.json" };
+
+    public string[] faceExpressMultiJsonFile = { rootDir + "express/test.json"};
+
+
+
     public string[] arDriveJsonFile = { rootDir + "ardrive/test.json"};
+
+
     public string[] arDriveBground = { rootDir + "ardrive/test.scene" };
 
+
+
     public string[] animFiles = { rootDir + "anims/" + "config.scene"};
+
 
     public string gifile = rootDir + "record/gif.json";
 

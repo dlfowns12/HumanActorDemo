@@ -31,7 +31,11 @@ public class UIManager : MonoBehaviour
     //美妆次数
     int[] iMakeup = new int[5] {0, 0, 0, 0, 0 };
 
+    int stafileCount = 0;
+
+
     int iAnimCount;
+
 
     //旋转
     //float rotateRd = 0.0f;
@@ -119,6 +123,13 @@ public class UIManager : MonoBehaviour
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
 
         sCtrl.RestoreTweakFace("");
+    }
+
+    public void export_emotion_bs_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+        sCtrl.ExportHeadEmotionBSMap();
     }
 
     /***********************换装相关测试****************************/
@@ -435,15 +446,92 @@ public class UIManager : MonoBehaviour
         sCtrl.RotateAvatar(rotateRd);
     }
 
+    bool flag_sta = false;
+    public void sta_play_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if( !flag_sta)
+        {
+            sCtrl.EnableStaFunction("enable");
+            flag_sta = true;
+        }
+        string strStaParam1 = File.ReadAllText(mTest.staTestJsonFile[0]);
+        //string strStaParam2 = File.ReadAllText(mTest.staTestJsonFile[1]);
+        //string strStaParam3 = File.ReadAllText(mTest.staTestJsonFile[2]);
+        //string strStaParam4 = File.ReadAllText(mTest.staTestJsonFile[3]);
+        sCtrl.StaWork(strStaParam1);
+        //sCtrl.StaWork(strStaParam2);
+        //sCtrl.StaWork(strStaParam3);
+        //sCtrl.StaWork(strStaParam4);
+
+        stafileCount++;
+
+        if (stafileCount >= 2)
+            stafileCount = 0;
+    }
+    public void sta_stop_click()
+    {
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if (flag_sta)
+            sCtrl.StaPlayControl("1");
+    }
+    public void sta_pause_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if (flag_sta)
+            sCtrl.StaPlayControl("2");
+    }
+    public void sta_resume_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        if (flag_sta)
+            sCtrl.StaPlayControl("3");
+
+    }
+
+    /***********************驱动相关测试****************************/
 
     float total_time = 0.0f;
+
     int fileIndex = 60;
+
     int interval = 0;
+    public void face_express_drive_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        string strArDriveParam = File.ReadAllText(mTest.faceExpressMultiJsonFile[0]);
+        sCtrl.EmotionRealDrive(strArDriveParam);
+
+    }
+
+
+    public void face_express_drive_restore_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.EmotionRealDriveOff("off");
+
+    }
+
+
     string strFaceArData = "";
     FaceARMultiJson strFaceArMultiData;
     int tNum = 0;
     public void face_ar_drive_click()
     {
+
         if (!sCtrl)
             sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
 
@@ -461,8 +549,71 @@ public class UIManager : MonoBehaviour
             tNum = 0;
 
         Debug.Log("tNum:" + tNum);
+
     }
-    
+    bool flag_getfile = true;
+    List<string> jsonfiles = new List<string>();
+    List<string> jpgfiles = new List<string>();
+    int iId = 0;
+    int maxCount = 0;
+    public void face_ar_one_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+
+        if (flag_getfile)
+        {
+
+            get_all_files("C:/work/test/arFace", "*.json", jsonfiles);
+            get_all_files("C:/work/test/arFace", "*.jpg", jpgfiles);
+            flag_getfile = false;
+            maxCount = jsonfiles.Count;
+        }
+        if(iId < maxCount)
+        {
+
+            strFaceArData = File.ReadAllText(jsonfiles[iId]);
+
+
+   
+            sCtrl.ArFaceRealDrive(strFaceArData);
+
+            string strJpgFile = jpgfiles[iId];
+            sCtrl.SetSceneBackgroundImage2(strJpgFile);
+
+            Debug.Log(jsonfiles[iId]);
+            Debug.Log(jpgfiles[iId]);
+
+            iId++;
+        }
+        else
+        {
+
+            Debug.Log("finished!");
+
+        }
+
+
+    }
+
+    private void get_all_files(string strDir,string suffix,List<string> fileNames)
+    {
+        if (Directory.Exists(strDir))
+        {
+            DirectoryInfo dir = new DirectoryInfo(strDir);
+            //获取目标路径下的单层文件
+            FileInfo[] files = dir.GetFiles(suffix);
+            //获取目标路径下的所有文件夹
+            for (int i = 0; i < files.Length; i++)
+                // Debug.Log(files[i].FullName);
+                fileNames.Add(files[i].FullName);
+
+
+        }
+
+
+    }
 
     public void face_ar_drive_on_click()
     {

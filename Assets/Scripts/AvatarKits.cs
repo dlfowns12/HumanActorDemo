@@ -105,18 +105,32 @@ namespace Avatar3D
         private AnimControl m_AnimCtrl;
 
 
-        //******头套功能********；
+        //*******sta对象 以及与sta相关的模块对象******** 
+        private StaUtil m_Sta = null;
+
+
+        //******跟表情驱动相关，包括语音驱动以及面部表情驱动********；
         private float pitchAngle;
         private float yawAngle;
         private float rollAngle;
         private Vector3 head_orig_rotation;
         private Transform head_root_bone_trans = null;
+        private EmotionBSDrive m_EmBSForDrive = null;
 
 
         //*****物理仿真模块*******
+
         private ClothSimulator m_ClothSim = null;
 
-        // 简单头套
+
+
+
+        //表情驱动是否开启
+        //驱动 更新 通知标志
+
+        private bool flag_em_drive_enable = true;
+
+        private bool flag_emotion_drive_update = false;
         private bool flag_ar_drive_update = false;
 
         private float m_LocalTrackx, m_LocalTracky, m_LocalTrackz, m_root_scale;
@@ -153,28 +167,37 @@ namespace Avatar3D
             m_AvatarManager.vtList = new List<Vector3[]>();
             //****************************************************************************
 
-            //模块：换装
+            //模块一：换装
             m_Costume = new Costume(scene_parent_node);
 
-            //模块：捏脸
+            //模块二：捏脸
             m_TwistFace = new TwistFace();
 
-            //模块：美妆
+            //模块三：美妆
             m_FaceMakeup = new FaceMakeUp();
 
-            //模块：场景管理之相机
+            //模块四：场景管理之相机
             mCamManager = GameObject.Find(camera_node_name).GetComponent<CamManager>();
 
             mLightGo = GameObject.Find(light_node_name);
 
-            //模块：动画模块
+            //模块五：驱动模块
+            m_EmBSForDrive = new EmotionBSDrive();
+
+
+            //模块六：动画模块
             m_AnimCtrl = new AnimControl();
 
-            //模块：录制模块
+            //模块七：录制模块
+
             m_SRecorder = new SenceRecorder(mCamManager.gameObject);
 
-            //模块：物理仿真
+            //模块八：物理仿真
+
             m_ClothSim = new ClothSimulator();
+
+
+
 
         }
 
@@ -229,6 +252,8 @@ namespace Avatar3D
             //***********************动画模块初始化*********************************
             m_AnimCtrl.initial(m_AvatarManager.MeshRootNode);
 
+            //***********************驱动模块初始化*********************************
+            m_EmBSForDrive.emInitial(emBsMapFile, m_AvatarHeadSK);
             head_root_bone_trans = av_skHead.rootBone;
             head_orig_rotation = new Vector3(head_root_bone_trans.localEulerAngles.x, head_root_bone_trans.localEulerAngles.y, head_root_bone_trans.localEulerAngles.z);
 
@@ -272,7 +297,14 @@ namespace Avatar3D
 
                 flag_ar_drive_update = false;
       
-            }   
+            }
+
+            if (flag_emotion_drive_update)
+            {
+                flag_emotion_drive_update = false;
+
+            }
+   
         }
 
 
@@ -875,6 +907,190 @@ namespace Avatar3D
         }
 
  
+        /******************************************************************************************************
+
+         以下是跟sta相关的一些接口
+
+        *******************************************************************************************************/
+        public void enableSta(MonoBehaviour goBH, GameObject go)
+        {
+            if (m_Sta == null)
+            {
+                if (m_EmBSForDrive.flag_em_initial)
+                    m_Sta = new StaUtil(goBH, go, this);
+
+                Debug.Log("sta  initial!");
+            }
+        }
+
+        public void staEmotionDrive(List<string> bsList,List<float> bsData)
+        {
+            if (m_Sta != null)
+            {
+                for (int i = 0; i < bsData.Count; i++)
+                       m_EmBSForDrive.emSetBSWeight(bsList[i], bsData[i]);
+            }
+        }
+        public void staRestoreEmotionBS()
+        {
+            if (m_Sta != null)
+                m_EmBSForDrive.emRestoreBS();
+        }
+
+        public void playAudio(string strStaJson)
+        {
+            if (m_Sta != null)
+            {
+    
+                StaParamJson strStaParamJson = JsonUtility.FromJson<StaParamJson>(strStaJson);
+                if (strStaParamJson.audioFilePath != null && strStaParamJson.audioFrames.Count == 0)
+                {
+                    MsgEvent.SendCallBackMsg((int)AvatarID.Err_sta_file, AvatarID.Err_sta_file.ToString());
+                    return;
+                }
+                m_Sta.work(strStaParamJson);
+                MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+               
+
+                /*******************/
+                //保存一份文件临时
+#if (false)
+exportEmotionBSdata(strStaParamJson)
+#endif
+                /********************/
+            }
+
+        }
+
+        private void exportEmotionBSdata(StaParamJson strStaParamJson)
+        {
+            //List<float> bsData = strStaParamJson.frames[0].data;
+            //EmotionBSJson emBlendshape = new EmotionBSJson();
+            //emBlendshape.EmotionBSMap = new List<NameMapInfo>();
+            //for (int i = 0; i < bsData.Count; i++)
+            //{
+            //    NameMapInfo emBSinfo = new NameMapInfo();
+            //    emBSinfo.name = bsData[i].name;
+            //    emBSinfo.mapname = "";
+
+            //    emBlendshape.EmotionBSMap.Add(emBSinfo);
+            //}
+            //string outputJson1 = JsonConvert.SerializeObject(emBlendshape);
+            //File.WriteAllText("d:/emotion_bs_map.json", outputJson1);
+
+        }
+        public void playControl(string strControl)
+        {
+            if (m_Sta != null)
+            {
+                int flag_control = int.Parse(strControl);
+                if (flag_control >= 0 && flag_control < (int)StaPlayStateControl.count)
+                {
+                    m_Sta.control(flag_control);
+                }
+                else
+                    MsgEvent.SendCallBackMsg((int)AvatarID.Success, AvatarID.Success.ToString());
+            }
+        }
+        public void getStaPlayState()
+        {
+            if (m_Sta != null)
+            {
+                string strState = m_Sta.get_sta_state();
+                MsgEvent.SendCallBackMsg(0, strState);
+            }
+        }
+
+        /******************************************************************************************************
+
+         辅助性的一些工具接口
+
+        *******************************************************************************************************/
+        //临时性的一个工具 tool
+        public void exportEmotionBSMapFile()
+        {
+            string jsonFile = "d:/emotion_bs_map.json";
+            string strEmBsData = File.ReadAllText(jsonFile);
+            EmotionBSJson emBsData = JsonConvert.DeserializeObject<EmotionBSJson>(strEmBsData);
+
+            for (int i = 0; i < emBsData.EmotionBSMap.Count; i++)
+            {
+                int num = av_skHead.sharedMesh.blendShapeCount;
+                string emBSName = emBsData.EmotionBSMap[i].name.ToLower();
+                bool res = false;
+                for (int j = 0; j < num; j++)
+                {
+                    string bsName = av_skHead.sharedMesh.GetBlendShapeName(j);
+                    string bsNameLw = bsName.ToLower();
+                    int pos = emBSName.IndexOf(bsNameLw);
+                    if (pos >= 0)
+                    {
+                        emBsData.EmotionBSMap[i].mapname = bsName;
+                        break;
+                    }
+                }
+            }
+
+            string jsonFile2 = "d:/emotion_bs_map2.json";
+            string outputJson1 = JsonConvert.SerializeObject(emBsData);
+            File.WriteAllText(jsonFile2, outputJson1);
+        }
+        /******************************************************************************************************
+
+         以下是跟表情驱动相关的一些接口
+
+        *******************************************************************************************************/
+
+        //private static float stepx = 5.0f;
+        public void faceExpressDrive(string faceBSJson)
+        {
+            if (!m_EmBSForDrive.flag_em_initial)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_emotion_initial, AvatarID.Err_emotion_initial.ToString());
+                return;
+            }
+
+            FaceExpressJson strFaceExJson = JsonUtility.FromJson<FaceExpressJson>(faceBSJson);
+
+            if (strFaceExJson == null)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_ardrive_data, AvatarID.Err_ardrive_data.ToString());
+                return;
+            }
+
+            ////头部姿态
+            if (!flag_emotion_drive_update)
+            {
+                flag_emotion_drive_update = true;
+            }
+
+            bool bset = false;
+        
+            //表情驱动
+            for (int i = 0; i < strFaceExJson.aiFaceExpress.Count; i++)
+            {
+                if (strFaceExJson.aiFaceExpress[i].name.Contains("jawopen"))
+                {
+                    if (strFaceExJson.aiFaceExpress[i].value <= 0.03f)
+                    {
+                        strFaceExJson.aiFaceExpress[i].value = 0.0f;
+                        bset = true;
+                    }
+                }
+                if (bset)
+                {
+                    if (strFaceExJson.aiFaceExpress[i].name.Contains("mouthshrugupper"))
+                        strFaceExJson.aiFaceExpress[i].value = 0.0f;
+                    if (strFaceExJson.aiFaceExpress[i].name.Contains("mouthfunnel"))
+                        strFaceExJson.aiFaceExpress[i].value = 0.0f;
+                }
+                m_EmBSForDrive.emSetBSWeight(strFaceExJson.aiFaceExpress[i].name, strFaceExJson.aiFaceExpress[i].value);
+            }
+
+            if (!flag_em_drive_enable)
+                flag_em_drive_enable = true;
+        }
+
         public void setHeadGesture(float pitchx, float yawy, float rollz)
         {
             pitchAngle = pitchx;
@@ -976,6 +1192,11 @@ namespace Avatar3D
                 pre_direction = direction;
 
             }
+
+            //表情驱动
+            for (int i = 0; i < strFaceArData.aiFaceExpress.Count; i++)
+                m_EmBSForDrive.emSetBSWeight(strFaceArData.aiFaceExpress[i].name, strFaceArData.aiFaceExpress[i].value);
+
             flag_ar_drive_update = true;
 
         }
@@ -986,16 +1207,29 @@ namespace Avatar3D
         /// </summary>
         public void faceArDrive(string arJson)
         {
+            //step1:
+            if (!m_EmBSForDrive.flag_em_initial)
+            {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_emotion_initial, AvatarID.Err_emotion_initial.ToString());
+                return;
+            }
+
             FaceARJson strFaceArData = JsonUtility.FromJson<FaceARJson>(arJson);
+
 
             if (strFaceArData.nCamWidth <= 0.0f || strFaceArData.nFaceWidth <= 0.0f)
             {
+                MsgEvent.SendCallBackMsg((int)AvatarID.Err_ardrive_data, AvatarID.Err_ardrive_data.ToString());
                 return;
             }
+            //step2: 计算 人脸缩放比例 
             //摄像头画面人脸宽度 转换到 画布 下的宽度
             float headScalex = mBGObj.bgCanvasWidth / (float)strFaceArData.nCamWidth;
             float headScaley = mBGObj.bgCanvasHeight / (float)strFaceArData.nCamHeight;
 
+            //headScale = 1.0f;
+
+            Debug.Log("track:" + strFaceArData.nFaceCenterX + "," + strFaceArData.nFaceCenterY);
             strFaceArData.nFaceWidth = (int)((float)strFaceArData.nFaceWidth * headScalex);
             strFaceArData.nFaceCenterY = (int)((float)strFaceArData.nFaceCenterY * headScaley);
             strFaceArData.nFaceCenterX = (int)((float)strFaceArData.nFaceCenterX * headScalex);
@@ -1049,7 +1283,12 @@ namespace Avatar3D
             Vector3 rotatedDirection = qt * direction;
             Vector3 rotatedPoint = rotatedDirection;
 
+            //表情驱动
+            for (int i = 0; i < strFaceArData.aiFaceExpress.Count; i++)
+                m_EmBSForDrive.emSetBSWeight(strFaceArData.aiFaceExpress[i].name, strFaceArData.aiFaceExpress[i].value);
+
             //rollangle:  是按照x轴旋转的 x轴朝右正向； pitchangle:是按照y轴旋转的， y轴朝下正向；yawangle:是按照z轴旋转的，朝外为正。
+
             if (!flag_ar_drive_update)
             {
                 setHeadGesture(strFaceArData.headAttitudeAngle.pitchAngle, strFaceArData.headAttitudeAngle.yawAngle, strFaceArData.headAttitudeAngle.rollAngle);
@@ -1089,6 +1328,9 @@ namespace Avatar3D
             if (m_AvatarManager.headNormalMat != null)
                 av_skHead.materials = m_AvatarManager.headNormalMat;
 
+            //表情恢复
+            m_EmBSForDrive.emRestoreBS();
+
         }
         public void setAvatarShow(string strShow)
         {
@@ -1097,6 +1339,21 @@ namespace Avatar3D
             else
                 scene_parent_node.SetActive(true);
 
+        }
+
+        public void faceExpressDriveTest(float pitch, float yaw, float roll)
+        {
+            setHeadGesture(pitch, yaw, roll);
+        }
+
+        public void faceExpressDriveRestore()
+        {
+            if (flag_em_drive_enable)
+            {
+                m_EmBSForDrive.emRestoreBS();
+                restoreHeadGesture();
+                flag_em_drive_enable = false;
+            }
         }
 
         public void playAnims(string animFile)
