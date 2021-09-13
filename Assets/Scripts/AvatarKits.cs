@@ -1057,6 +1057,11 @@ exportEmotionBSdata(strStaParamJson)
                 MsgEvent.SendCallBackMsg((int)AvatarID.Err_ardrive_data, AvatarID.Err_ardrive_data.ToString());
                 return;
             }
+           
+
+            //眼球驱动
+            m_EmBSForDrive.eyeBallRotation(strFaceExJson.aiLeftEye);
+            m_EmBSForDrive.eyeBallRotation(strFaceExJson.aiRightEye);
 
             ////头部姿态
             if (!flag_emotion_drive_update)
@@ -1193,9 +1198,15 @@ exportEmotionBSdata(strStaParamJson)
 
             }
 
+            //跟表情相关的
+
             //表情驱动
             for (int i = 0; i < strFaceArData.aiFaceExpress.Count; i++)
                 m_EmBSForDrive.emSetBSWeight(strFaceArData.aiFaceExpress[i].name, strFaceArData.aiFaceExpress[i].value);
+
+            //眼球驱动
+            m_EmBSForDrive.eyeBallRotation(strFaceArData.aiLeftEye);
+            m_EmBSForDrive.eyeBallRotation(strFaceArData.aiRightEye);
 
             flag_ar_drive_update = true;
 
@@ -1287,6 +1298,11 @@ exportEmotionBSdata(strStaParamJson)
             for (int i = 0; i < strFaceArData.aiFaceExpress.Count; i++)
                 m_EmBSForDrive.emSetBSWeight(strFaceArData.aiFaceExpress[i].name, strFaceArData.aiFaceExpress[i].value);
 
+
+            //眼球驱动
+            m_EmBSForDrive.eyeBallRotation(strFaceArData.aiLeftEye);
+            m_EmBSForDrive.eyeBallRotation(strFaceArData.aiRightEye);
+
             //rollangle:  是按照x轴旋转的 x轴朝右正向； pitchangle:是按照y轴旋转的， y轴朝下正向；yawangle:是按照z轴旋转的，朝外为正。
 
             if (!flag_ar_drive_update)
@@ -1354,10 +1370,13 @@ exportEmotionBSdata(strStaParamJson)
                 restoreHeadGesture();
                 flag_em_drive_enable = false;
             }
+
         }
+
 
         public void playAnims(string animFile)
         {
+
             string strAnimData = File.ReadAllText(animFile);
             AnimationJson AnimData = JsonUtility.FromJson<AnimationJson>(strAnimData);
             string rootDir = Path.GetDirectoryName(animFile);
@@ -1478,6 +1497,7 @@ exportEmotionBSdata(strStaParamJson)
             exporter.Dispose();
 
         }
+
 
     }
 }

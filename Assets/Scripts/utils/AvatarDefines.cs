@@ -268,6 +268,7 @@ public class NameMapInfo2
 public class EmotionBSJson
 {
     public List<NameMapInfo>  EmotionBSMap;
+    public List<NameMapInfo>  EyeBallBSMap;
 }
 
 [Serializable]
@@ -319,6 +320,8 @@ public class ARJson
 public class FaceARJson
 {
     public List<EmBSInfo>      aiFaceExpress;
+    public List<EmBSInfo>      aiLeftEye;
+    public List<EmBSInfo>      aiRightEye;
     public AngleInfo           headAttitudeAngle;
 
     public int nCamWidth;    //ÉãÏñÍ·¿í¶È
@@ -352,6 +355,8 @@ public class FaceARMultiJson
 public class FaceExpressJson
 {
     public List<EmBSInfo>  aiFaceExpress;
+    public List<EmBSInfo>  aiLeftEye;
+    public List<EmBSInfo>  aiRightEye;
     public AngleInfo       headAttitudeAngle;
 }
 

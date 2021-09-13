@@ -14,6 +14,7 @@ note:核心功能尽量不采用MonoBehavior继承
 public class EmotionBSDrive 
 {
     private Dictionary<string, int> em_id_dict;
+    private Dictionary<string, int> eyeball_id_dict;
 
     public class EmotionBSInfo{
 
@@ -31,8 +32,10 @@ public class EmotionBSDrive
     }
 
 
-    //用于驱动面部表情的
+    //用于驱动面部表情的   //用于驱动眼球的
     private List<EmotionBSInfo>       m_EmBSList; 
+    private List<EmotionBSInfo>       m_EyeBallBSList;
+
     private List<SkinnedMeshRenderer> m_EmotionSK;   //用于表情驱动的所有skinnedmeshrender组件
 
     public bool flag_em_initial = true;  
@@ -47,7 +50,10 @@ public class EmotionBSDrive
         //step1:
         m_EmotionSK = skList;
         em_id_dict = new Dictionary<string, int>();
+        eyeball_id_dict = new Dictionary<string, int>();
+
         m_EmBSList = new List<EmotionBSInfo>();
+        m_EyeBallBSList = new List<EmotionBSInfo>();
 
         //step1:读取 表情映射文件
         string strEmBsData = File.ReadAllText(emBSmapFile);
@@ -77,6 +83,28 @@ public class EmotionBSDrive
             embs.num    = embs.skIndex.Count;
             embs.bsName = bsMapName;
             m_EmBSList.Add(embs);
+        }
+
+        //step3:用于眼球驱动的 BS 名称映射 （在51个表情里 头部已经包含了眼球转动的bs，为了区分，重新复制了这几个BS，并用了新的名字映射）
+        for(int i=0;i<emBsData.EyeBallBSMap.Count;i++)
+        {
+            string bsName = emBsData.EyeBallBSMap[i].name;
+            string bsMapName = emBsData.EyeBallBSMap[i].mapname;
+            eyeball_id_dict.Add(bsName, i);
+           
+            EmotionBSInfo embs = new EmotionBSInfo();
+            for (int j = 0; j < skList.Count; j++)
+            {
+                int id = skList[j].sharedMesh.GetBlendShapeIndex(bsMapName);
+                if (id >= 0)
+                {
+                    embs.skIndex.Add(j);
+                    embs.skBSID.Add(id);
+                }
+            }
+            embs.num    = embs.skIndex.Count;
+            embs.bsName = bsMapName;
+            m_EyeBallBSList.Add(embs);
         }
 
         //************************************************************************
@@ -119,6 +147,63 @@ public class EmotionBSDrive
             else
                 for (int i = 0; i < embs.num; i++)
                     m_EmotionSK[embs.skIndex[i]].SetBlendShapeWeight(embs.skBSID[i], 0.0f);
+        }
+
+        //***用于眼球的****
+        for (int j = 0; j < m_EyeBallBSList.Count; j++)
+        {
+            EmotionBSInfo embs = m_EyeBallBSList[j];
+            if (embs.num == 1)
+            {
+                int skid = embs.skIndex[0];
+                int bsid = embs.skBSID[0];
+                m_EmotionSK[skid].SetBlendShapeWeight(bsid, 0.0f);
+            }
+            else
+                for (int i = 0; i < embs.num; i++)
+                    m_EmotionSK[embs.skIndex[i]].SetBlendShapeWeight(embs.skBSID[i], 0.0f);
+        }
+
+    }
+
+    /**********************************************************************************
+     
+     用于实时表情驱动
+    
+     **********************************************************************************/
+
+    public void emSetBSWeightForEyeBall(string bsName, float value)
+    {
+
+        int id = eyeball_id_dict[bsName];
+
+        if (id >= 0)
+        {
+            value = value * 100;
+            EmotionBSInfo embs = m_EyeBallBSList[id];
+
+            if (embs.num == 1)
+            {
+                int skid = embs.skIndex[0];
+                int bsid = embs.skBSID[0];
+                m_EmotionSK[skid].SetBlendShapeWeight(bsid, value);
+            }
+            else
+                for (int i = 0; i < embs.num; i++)
+                    m_EmotionSK[embs.skIndex[i]].SetBlendShapeWeight(embs.skBSID[i], value);
+        }
+    }
+
+
+    /// <summary>
+    /// 眼睛bs列表
+    /// </summary>
+    /// <param name="eyeballBSList"></param>
+    public void eyeBallRotation(List<EmBSInfo> eyeballBSList)
+    {
+        for (int i = 0; i < eyeballBSList.Count; i++)
+        {
+            emSetBSWeightForEyeBall(eyeballBSList[i].name, Mathf.Abs(eyeballBSList[i].value));
         }
     }
 
