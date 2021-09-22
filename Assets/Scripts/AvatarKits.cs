@@ -133,6 +133,11 @@ namespace Avatar3D
         private bool flag_emotion_drive_update = false;
         private bool flag_ar_drive_update = false;
 
+        //舌头动画标志
+        private bool flag_tongue_anim_enable = false;
+        private bool flag_tongue_anim_disable = false;
+        
+
         private float m_LocalTrackx, m_LocalTracky, m_LocalTrackz, m_root_scale;
         private Vector3 pre_headPos;
         private Vector3 pre_headAngle;
@@ -304,7 +309,25 @@ namespace Avatar3D
                 flag_emotion_drive_update = false;
 
             }
-   
+
+            //控制舌头驱动的
+            if (flag_tongue_anim_enable)
+                m_EmBSForDrive.update();
+
+            if(flag_tongue_anim_disable)
+            {
+                if (m_EmBSForDrive.getTongueAnimState())
+                {
+              
+
+                    flag_tongue_anim_disable = false;
+                    flag_tongue_anim_enable  = false;
+
+                }
+            }
+
+
+    
         }
 
 
@@ -1069,28 +1092,62 @@ exportEmotionBSdata(strStaParamJson)
                 flag_emotion_drive_update = true;
             }
 
-            bool bset = false;
-        
-            //表情驱动
-            for (int i = 0; i < strFaceExJson.aiFaceExpress.Count; i++)
+            if (strFaceExJson.tongueBS != "")
             {
-                if (strFaceExJson.aiFaceExpress[i].name.Contains("jawopen"))
+                flag_tongue_anim_enable  = true;
+                flag_tongue_anim_disable = false;
+
+                m_EmBSForDrive.setTongueAnim(strFaceExJson.tongueBS);
+
+                //表情驱动
+                for (int i = 0; i < strFaceExJson.aiFaceExpress.Count; i++)
                 {
-                    if (strFaceExJson.aiFaceExpress[i].value <= 0.03f)
+                    if (strFaceExJson.aiFaceExpress[i].name != m_EmBSForDrive.m_TongueLinkBSList[0].bsName)
+                        m_EmBSForDrive.emSetBSWeight(strFaceExJson.aiFaceExpress[i].name, strFaceExJson.aiFaceExpress[i].value);
+                    else
                     {
-                        strFaceExJson.aiFaceExpress[i].value = 0.0f;
-                        bset = true;
+                        if (strFaceExJson.aiFaceExpress[i].value < 0.7f)
+                            m_EmBSForDrive.emSetBSWeight(strFaceExJson.aiFaceExpress[i].name, 0.7f);
                     }
                 }
-                if (bset)
-                {
-                    if (strFaceExJson.aiFaceExpress[i].name.Contains("mouthshrugupper"))
-                        strFaceExJson.aiFaceExpress[i].value = 0.0f;
-                    if (strFaceExJson.aiFaceExpress[i].name.Contains("mouthfunnel"))
-                        strFaceExJson.aiFaceExpress[i].value = 0.0f;
-                }
-                m_EmBSForDrive.emSetBSWeight(strFaceExJson.aiFaceExpress[i].name, strFaceExJson.aiFaceExpress[i].value);
             }
+            else
+            {
+                m_EmBSForDrive.setTongueAnim("");
+                flag_tongue_anim_disable = true;
+
+                bool bset = false;
+          
+                //表情驱动
+                for (int i = 0; i < strFaceExJson.aiFaceExpress.Count; i++)
+                {
+                    if (strFaceExJson.aiFaceExpress[i].name.Contains("jawopen"))
+                    {
+                        if (strFaceExJson.aiFaceExpress[i].value <= 0.03f)
+                        {
+                            strFaceExJson.aiFaceExpress[i].value = 0.0f;
+                            bset = true;
+                        }
+                    }
+                    if (bset)
+                    {
+                        if (strFaceExJson.aiFaceExpress[i].name.Contains("mouthshrugupper"))
+                            strFaceExJson.aiFaceExpress[i].value = 0.0f;
+                        if (strFaceExJson.aiFaceExpress[i].name.Contains("mouthfunnel"))
+                            strFaceExJson.aiFaceExpress[i].value = 0.0f;
+                    }
+                    
+
+                    m_EmBSForDrive.emSetBSWeight(strFaceExJson.aiFaceExpress[i].name, strFaceExJson.aiFaceExpress[i].value);
+
+
+                }
+
+            }
+
+
+     
+
 
             if (!flag_em_drive_enable)
                 flag_em_drive_enable = true;
@@ -1185,7 +1242,11 @@ exportEmotionBSdata(strStaParamJson)
                 else
                     m_LocalTrackx = headPos.x - xvalue;
 
+#if UNITY_STANDALONE_WIN
                 m_LocalTrackx = m_LocalTrackx + 0.0f;
+#else
+            m_LocalTrackx = -m_LocalTrackx;
+#endif
 
                 m_LocalTracky =  headPos.y;
                 m_LocalTrackz = -headPos.z;
@@ -1196,7 +1257,11 @@ exportEmotionBSdata(strStaParamJson)
                 pre_qt = qt;
                 pre_direction = direction;
 
+
+
             }
+
+
 
             //跟表情相关的
 
@@ -1204,9 +1269,14 @@ exportEmotionBSdata(strStaParamJson)
             for (int i = 0; i < strFaceArData.aiFaceExpress.Count; i++)
                 m_EmBSForDrive.emSetBSWeight(strFaceArData.aiFaceExpress[i].name, strFaceArData.aiFaceExpress[i].value);
 
+
             //眼球驱动
             m_EmBSForDrive.eyeBallRotation(strFaceArData.aiLeftEye);
             m_EmBSForDrive.eyeBallRotation(strFaceArData.aiRightEye);
+
+
+
+
 
             flag_ar_drive_update = true;
 
@@ -1225,7 +1295,12 @@ exportEmotionBSdata(strStaParamJson)
                 return;
             }
 
+
+
             FaceARJson strFaceArData = JsonUtility.FromJson<FaceARJson>(arJson);
+
+
+
 
 
             if (strFaceArData.nCamWidth <= 0.0f || strFaceArData.nFaceWidth <= 0.0f)
@@ -1240,15 +1315,22 @@ exportEmotionBSdata(strStaParamJson)
 
             //headScale = 1.0f;
 
+            //Debug.Log("headScale:" + headScale);
             Debug.Log("track:" + strFaceArData.nFaceCenterX + "," + strFaceArData.nFaceCenterY);
             strFaceArData.nFaceWidth = (int)((float)strFaceArData.nFaceWidth * headScalex);
             strFaceArData.nFaceCenterY = (int)((float)strFaceArData.nFaceCenterY * headScaley);
             strFaceArData.nFaceCenterX = (int)((float)strFaceArData.nFaceCenterX * headScalex);
 
+            //Debug.Log("xxxxxxxxxxxxxxxxxxx");
+            //Debug.Log(strFaceArData.nFaceCenterY);
+            //Debug.Log(strFaceArData.nFaceCenterX);
+            //Debug.Log("yyyyyyyyyyyyyyyyyyy");
+
             float faceWidthInCanvas = strFaceArData.nFaceWidth * m_AvatarManager.zoomScale;
             float faceWidthInWorld = faceWidthInCanvas * mCamManager.CanvasInWorldWidth / (float)mCamManager.refCanvasWidth;
             float avatarFaceWidthInWorld = m_AvatarManager.faceWidth;
             float aScale = faceWidthInWorld / avatarFaceWidthInWorld;
+
 
             //缩放系数抖动处理*************add by 0721********
 
@@ -1268,9 +1350,12 @@ exportEmotionBSdata(strStaParamJson)
 
                 trackx = (mCamManager.refCanvasWidth / 2.0f - strFaceArData.nFaceCenterX) / mCamManager.refCanvasWidth * mCamManager.CanvasInWorldWidth;
                 trackyy = (mCamManager.refCanvasHeight / 2.0f - strFaceArData.nFaceCenterY) / mCamManager.refCanvasHeight * mCamManager.CanvasInWorldHeight;
+
+
             }
             else
             {
+                //strFaceArData.nFaceCenterX = strFaceArData.nFaceCenterX;
                 trackx = (mCamManager.refCanvasWidth / 2.0f - strFaceArData.nFaceCenterX) / mCamManager.refCanvasWidth * mCamManager.CanvasInWorldWidth;
                 trackyy = (mCamManager.refCanvasHeight / 2.0f - strFaceArData.nFaceCenterY) / mCamManager.refCanvasHeight * mCamManager.CanvasInWorldHeight;
             }
@@ -1346,6 +1431,8 @@ exportEmotionBSdata(strStaParamJson)
 
             //表情恢复
             m_EmBSForDrive.emRestoreBS();
+
+
 
         }
         public void setAvatarShow(string strShow)
@@ -1495,6 +1582,8 @@ exportEmotionBSdata(strStaParamJson)
             var bytes = data.ToGlbBytes();
             File.WriteAllBytes(strFileName + ".glb", bytes);
             exporter.Dispose();
+
+
 
         }
 

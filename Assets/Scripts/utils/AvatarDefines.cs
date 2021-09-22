@@ -269,6 +269,8 @@ public class EmotionBSJson
 {
     public List<NameMapInfo>  EmotionBSMap;
     public List<NameMapInfo>  EyeBallBSMap;
+    public List<NameMapInfo>  TongueBSMap;
+    public List<NameMapInfo>  TongueLinkBSMap;
 }
 
 [Serializable]
@@ -358,6 +360,7 @@ public class FaceExpressJson
     public List<EmBSInfo>  aiLeftEye;
     public List<EmBSInfo>  aiRightEye;
     public AngleInfo       headAttitudeAngle;
+    public string          tongueBS;
 }
 
 /// <summary>
