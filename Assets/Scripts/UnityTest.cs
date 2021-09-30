@@ -101,6 +101,12 @@ public class UnityTest
     public string[] animFiles = { rootDir + "anims/" + "config.scene"};
 
 
+    public string[] bodyDriveFile = { rootDir + "body/" + "all.json"};
+
+    public string[] halfbodyDriveFile = { rootDir + "body/" + "half.json" };
+
+
+
     public string gifile = rootDir + "record/gif.json";
 
     public string mp4file = rootDir + "record/mp4.json";

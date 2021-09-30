@@ -35,6 +35,7 @@ public class SceneController : MonoBehaviour
 
     private bool flag_emotion_drive_enable = false;
     private bool flag_ar_drive_enable = false;
+    private bool flag_body_drive_enable = false;
 
     /**************************/
 
@@ -83,7 +84,7 @@ public class SceneController : MonoBehaviour
     void Update()
     {
         //会做一些判断，用于实时的一些功能，必须面部实时驱动
-        if (flag_emotion_drive_enable || flag_ar_drive_enable)
+        if (flag_emotion_drive_enable || flag_ar_drive_enable || flag_body_drive_enable)
         {
             if (commonAvatarKits != null)
                 commonAvatarKits.Update();
@@ -98,7 +99,7 @@ public class SceneController : MonoBehaviour
     //private void LateUpdate()
     //{
     //    //会做一些判断，用于实时的一些功能，必须面部实时驱动
-    //    if (flag_emotion_drive_enable || flag_ar_drive_enable)
+    //    if (flag_emotion_drive_enable || flag_ar_drive_enable || flag_body_drive_enable)
     //    {
     //        if (commonAvatarKits != null)
     //            commonAvatarKits.Update();
@@ -493,7 +494,7 @@ public class SceneController : MonoBehaviour
 
     /******************************************************************************************************
 
-    以下是跟 驱动相关的功能接口  (实时驱动)
+    以下是跟 表情 & 肢体 驱动相关的功能接口  (表情肢体实时驱动)
 
     *******************************************************************************************************/
 
@@ -546,7 +547,6 @@ public class SceneController : MonoBehaviour
             MsgEvent.SendCallBackMsg((int)AvatarID.Suc_camera_bind, AvatarID.Suc_camera_bind.ToString());
         }
     }
-
 
     public void ArFaceDriveDisable(string strDisable)
     {
@@ -674,6 +674,44 @@ public class SceneController : MonoBehaviour
         if (commonAvatarKits != null)
             commonAvatarKits.stopRecordWebP();
     }
+
+	/******************************************************************************************************
+
+    以下是跟肢体驱动相关
+
+  *******************************************************************************************************/
+
+    public void SetBodyDriveEnable(string strEnable)
+    {
+
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.setBodyDriveEnable();
+
+            flag_body_drive_enable = true;
+        }
+    }
+
+    public void SetBodyDriveDisable(string strDisable)
+    {
+
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.setBodyDriveDisable();
+            flag_body_drive_enable = false;
+        }
+    }
+
+    public void BodyRealDrive(string dataJson)
+    {
+        if (commonAvatarKits != null)
+        {
+            commonAvatarKits.setBodyDriveData(dataJson);
+        }
+
+    }
+
+
 
     /******************************************************************************************************
 

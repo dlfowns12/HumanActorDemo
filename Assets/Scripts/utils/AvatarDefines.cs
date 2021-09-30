@@ -92,7 +92,6 @@ public class standardmodelJson
     public float scalejitter; //系数抖动
     public string necktransmat;
 
-
     //仿真相关
     public string simfile;
 
@@ -280,7 +279,7 @@ public class BoneMapJson
 }
 
 /**********************************
- 表情驱动定义，用来解析json文件
+ 表情&肢体驱动定义，用来解析json文件
  **********************************/
 [Serializable]
 public class KeyPointInfo
@@ -400,6 +399,32 @@ public class AnimationJson
     public float  speed;
 }
 
+[Serializable]
+public class BoneAIJson
+{
+    public String name;  //骨骼名称
+    public float x;      //
+    public float y;
+    public float z;
+}
+
+[Serializable]
+public class RotationJson
+{
+
+    public float x;
+    public float y;
+    public float z;
+}
+
+[Serializable]
+public class skeletonJson
+{
+    public bool EnableLowerBody;
+    public bool EnableFingure;
+    public List<BoneAIJson> BoneData;
+    public RotationJson RotationCorrect;
+}
 
 
 /**********************************
@@ -538,9 +563,10 @@ public enum AvatarID
     Suc_sta_idle = 6004,
 
 
-    //驱动相关
+    //表情肢体驱动相关
     Err_emotion_initial = 7000,
     Err_ardrive_data,
+    Err_bone_map_file,
 
 
     //背景相关

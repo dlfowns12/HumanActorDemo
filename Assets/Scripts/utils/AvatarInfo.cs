@@ -51,7 +51,6 @@ public class AvatarManager
     public float  scalejitter;        //抖动系数
     public string neckTransMatName;  //颈部透明材质
 
-
     public Material neckMat;
     public Material neckTransMat;
 
@@ -313,3 +312,12 @@ public class consume_assetbunddle
     AssetBundle ab_ear;
     AssetBundle ab_bracelet;
 }
+
+
+/******************************************
+ 
+ 用于表情驱动中一些特别定义的名称 必须以下面的为准
+ 
+ ******************************************/
+
+

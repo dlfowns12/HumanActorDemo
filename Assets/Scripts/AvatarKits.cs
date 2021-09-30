@@ -110,13 +110,9 @@ namespace Avatar3D
 
 
         //******跟表情驱动相关，包括语音驱动以及面部表情驱动********；
-        private float pitchAngle;
-        private float yawAngle;
-        private float rollAngle;
-        private Vector3 head_orig_rotation;
-        private Transform head_root_bone_trans = null;
         private EmotionBSDrive m_EmBSForDrive = null;
 
+        private BodyDrive m_BodyDrive = null;
 
         //*****物理仿真模块*******
 
@@ -132,6 +128,10 @@ namespace Avatar3D
 
         private bool flag_emotion_drive_update = false;
         private bool flag_ar_drive_update = false;
+
+        private bool flag_body_drive_enable = false;
+        private bool flag_body_drive_update = false;
+
 
         //舌头动画标志
         private bool flag_tongue_anim_enable = false;
@@ -188,6 +188,7 @@ namespace Avatar3D
 
             //模块五：驱动模块
             m_EmBSForDrive = new EmotionBSDrive();
+            m_BodyDrive = new BodyDrive();
 
 
             //模块六：动画模块
@@ -259,8 +260,7 @@ namespace Avatar3D
 
             //***********************驱动模块初始化*********************************
             m_EmBSForDrive.emInitial(emBsMapFile, m_AvatarHeadSK);
-            head_root_bone_trans = av_skHead.rootBone;
-            head_orig_rotation = new Vector3(head_root_bone_trans.localEulerAngles.x, head_root_bone_trans.localEulerAngles.y, head_root_bone_trans.localEulerAngles.z);
+            m_BodyDrive.initial(boneMapFile,av_skHead, m_AvatarManager.MeshRootNode, m_AvatarManager.bonesDic, m_AvatarManager.bonesTrans);  //
 
             //*********************************************************************
 
@@ -292,20 +292,29 @@ namespace Avatar3D
                 Vector3 headMovePos = new Vector3(m_LocalTrackx, m_LocalTracky, m_LocalTrackz);
 
                 scene_parent_node.transform.localPosition = Vector3.SmoothDamp(scene_parent_node.transform.localPosition, headMovePos, ref velocity,0.025f);
-
+               
                 //method1:
                 // scene_parent_node.transform.localPosition = new Vector3(m_LocalTrackx, m_LocalTracky, m_LocalTrackz);
                 //scene_parent_node.transform.localScale = new Vector3(m_AvatarManager.zoomScale, m_AvatarManager.zoomScale, m_AvatarManager.zoomScale);
 
-                head_root_bone_trans.localEulerAngles = new Vector3(head_orig_rotation.x + pitchAngle, head_orig_rotation.y + yawAngle,
-                                                            head_orig_rotation.z + rollAngle);
-
+                m_BodyDrive.Update(1);
                 flag_ar_drive_update = false;
       
+            }
+           
+
+            if (flag_body_drive_update)
+            {
+
+    
+                m_BodyDrive.Update(2);
+                flag_body_drive_update = false;
             }
 
             if (flag_emotion_drive_update)
             {
+             
+                m_BodyDrive.Update(1);
                 flag_emotion_drive_update = false;
 
             }
@@ -492,7 +501,6 @@ namespace Avatar3D
             m_AvatarManager.trackyjitter = modeljson.trackyjitter;
             m_AvatarManager.scalejitter  = modeljson.scalejitter;
 
-
             int headMatNum = av_skHead.sharedMaterials.Length;
 
             if (headMatNum < 2)
@@ -531,6 +539,29 @@ namespace Avatar3D
 
         }
 
+        private void exportBodyBones()
+        {
+            string fullTxtName = "d:/bonesname.txt";
+            StreamWriter sw = null;
+            FileInfo fi = new FileInfo(fullTxtName);
+
+            if (File.Exists(fullTxtName))
+                File.Delete(fullTxtName);
+
+            if (!File.Exists(fullTxtName))
+                sw = fi.CreateText();
+
+            sw.Write(m_AvatarBodySK.bones.Length);
+            sw.Write("\n");
+            for (int i = 0; i < m_AvatarBodySK.bones.Length; i++)
+            {
+
+                sw.Write(m_AvatarBodySK.bones[i].name);
+                sw.Write("\n");
+            }
+
+            sw.Close();
+        }
         /******************************************************************************************************
 
             以下是虚拟形象捏脸相关的接口 
@@ -1067,7 +1098,7 @@ exportEmotionBSdata(strStaParamJson)
         //private static float stepx = 5.0f;
         public void faceExpressDrive(string faceBSJson)
         {
-            if (!m_EmBSForDrive.flag_em_initial)
+            if (!m_EmBSForDrive.flag_em_initial || !m_BodyDrive.flag_intial)
             {
                 MsgEvent.SendCallBackMsg((int)AvatarID.Err_emotion_initial, AvatarID.Err_emotion_initial.ToString());
                 return;
@@ -1089,6 +1120,9 @@ exportEmotionBSdata(strStaParamJson)
             ////头部姿态
             if (!flag_emotion_drive_update)
             {
+                m_BodyDrive.setHeadGesture(strFaceExJson.headAttitudeAngle.pitchAngle, strFaceExJson.headAttitudeAngle.yawAngle,
+                                      strFaceExJson.headAttitudeAngle.rollAngle);
+
                 flag_emotion_drive_update = true;
             }
 
@@ -1153,18 +1187,6 @@ exportEmotionBSdata(strStaParamJson)
                 flag_em_drive_enable = true;
         }
 
-        public void setHeadGesture(float pitchx, float yawy, float rollz)
-        {
-            pitchAngle = pitchx;
-            yawAngle = yawy;
-            rollAngle = rollz;
-
-        }
-
-        public void restoreHeadGesture()
-        {
-            head_root_bone_trans.localEulerAngles = new Vector3(head_orig_rotation.x, head_orig_rotation.y, head_orig_rotation.z);
-        }
 
         public void faceArDrive2(string arJson)
         {
@@ -1218,8 +1240,21 @@ exportEmotionBSdata(strStaParamJson)
 
             Vector3 headAngle = new Vector3(-eulerAngles.x, eulerAngles.y - 180, -eulerAngles.z);
 
+            //Vector3 headAngle = new Vector3(eulerAngles.x, eulerAngles.y - 180, -eulerAngles.z);
 
-            setHeadGesture(headAngle.y, headAngle.z, headAngle.x + 360.0f);
+
+            //Debug.Log("headpos:" + headPos.x + "," + headPos.y + "," + headPos.z);
+            //Debug.Log("headAngle:" + headAngle.x + "," + headAngle.y + "," + headAngle.z);
+
+#if UNITY_STANDALONE_WIN
+
+        m_BodyDrive.setHeadGesture(headAngle.y, headAngle.z, headAngle.x + 360.0f);
+
+#else
+        m_BodyDrive.setHeadGesture(-headAngle.y, -headAngle.z, headAngle.x + 360.0f);
+
+#endif
+
 
 
             Quaternion qt = Quaternion.Euler(headAngle.y, headAngle.z, headAngle.x + 360.0f);
@@ -1229,11 +1264,11 @@ exportEmotionBSdata(strStaParamJson)
 
             float xvalue = Mathf.Sin(Mathf.PI * headAngle.y / 180.0f);
             xvalue = Mathf.Abs(xvalue);
-            
+
+ 
 
             float yvalue = Mathf.Sin(Mathf.PI * headAngle.x / 180.0f);
             yvalue = Mathf.Abs(yvalue);
-
             if (!flag_ar_drive_update)
             {
 
@@ -1281,15 +1316,14 @@ exportEmotionBSdata(strStaParamJson)
             flag_ar_drive_update = true;
 
         }
-
-
+        
         /// <summary>
         /// ar驱动，实时跟踪摄像头画面人头位置，驱动虚拟形象头模
         /// </summary>
         public void faceArDrive(string arJson)
         {
             //step1:
-            if (!m_EmBSForDrive.flag_em_initial)
+            if (!m_EmBSForDrive.flag_em_initial || !m_BodyDrive.flag_intial)
             {
                 MsgEvent.SendCallBackMsg((int)AvatarID.Err_emotion_initial, AvatarID.Err_emotion_initial.ToString());
                 return;
@@ -1392,7 +1426,7 @@ exportEmotionBSdata(strStaParamJson)
 
             if (!flag_ar_drive_update)
             {
-                setHeadGesture(strFaceArData.headAttitudeAngle.pitchAngle, strFaceArData.headAttitudeAngle.yawAngle, strFaceArData.headAttitudeAngle.rollAngle);
+                m_BodyDrive.setHeadGesture(strFaceArData.headAttitudeAngle.pitchAngle, strFaceArData.headAttitudeAngle.yawAngle, strFaceArData.headAttitudeAngle.rollAngle);
                 m_LocalTrackx = trackx + rotatedDirection.x;
                 m_LocalTracky = tracky + rotatedDirection.y; ;
                 m_root_scale = aScale;
@@ -1424,7 +1458,7 @@ exportEmotionBSdata(strStaParamJson)
             scene_parent_node.transform.localRotation = qt;
 
             //头部姿态
-            restoreHeadGesture();
+            m_BodyDrive.restoreHeadGesture();
 
             if (m_AvatarManager.headNormalMat != null)
                 av_skHead.materials = m_AvatarManager.headNormalMat;
@@ -1446,7 +1480,7 @@ exportEmotionBSdata(strStaParamJson)
 
         public void faceExpressDriveTest(float pitch, float yaw, float roll)
         {
-            setHeadGesture(pitch, yaw, roll);
+            m_BodyDrive.setHeadGesture(pitch, yaw, roll);
         }
 
         public void faceExpressDriveRestore()
@@ -1454,7 +1488,7 @@ exportEmotionBSdata(strStaParamJson)
             if (flag_em_drive_enable)
             {
                 m_EmBSForDrive.emRestoreBS();
-                restoreHeadGesture();
+                m_BodyDrive.restoreHeadGesture();
                 flag_em_drive_enable = false;
             }
 
@@ -1540,6 +1574,37 @@ exportEmotionBSdata(strStaParamJson)
 
         }
 
+		/******************************************************************************************************
+
+         以下是跟肢体驱动相关的一些接口
+
+         *******************************************************************************************************/
+        public void setBodyDriveEnable()
+        {
+            if (!flag_body_drive_enable)
+            {
+                flag_body_drive_enable = true;
+                m_BodyDrive.setBodyDriveEnable(true);
+            }
+        }
+        public void setBodyDriveDisable()
+        {
+            if (flag_body_drive_enable)
+            {
+                flag_body_drive_enable = false;
+                m_BodyDrive.setBodyDriveEnable(false);
+            }
+        }
+        public void setBodyDriveData(string dataJson)
+        {
+            if (flag_body_drive_enable)
+            {
+                skeletonJson boneData = JsonUtility.FromJson<skeletonJson>(dataJson);
+      
+                m_BodyDrive.setBonesDriveDataJson(boneData);
+                flag_body_drive_update = true;
+            }
+        }
         public void recordWebP(string dataJson)
         {
             RecordWebPJson webpData = JsonUtility.FromJson<RecordWebPJson>(dataJson);
@@ -1585,7 +1650,17 @@ exportEmotionBSdata(strStaParamJson)
 
 
 
+
+
+
         }
+
+
+
+
+
+
+
 
 
     }

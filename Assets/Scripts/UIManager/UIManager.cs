@@ -45,6 +45,7 @@ public class UIManager : MonoBehaviour
 
     public void Start()
     { 
+
     }
     //加载shader 功能测试
     public void loadshader_click()
@@ -55,6 +56,10 @@ public class UIManager : MonoBehaviour
 
         //test
         loadAvatar_click();
+
+        //body_drive_enable_click();
+
+        // body_drive_click();
 
         flag_load = true;
 
@@ -504,6 +509,41 @@ public class UIManager : MonoBehaviour
 
     int fileIndex = 60;
 
+#if false
+    private void Update()
+    {
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+
+        if (!flag_load)
+            return;
+
+        total_time = total_time + Time.deltaTime;
+
+        //if (total_time >= 0.3f)
+        {
+            total_time = 0.0f;
+            Debug.Log("index :" + fileIndex);
+
+            string feName = "C:/work/test/faceExpress/tongue/" + fileIndex.ToString() + ".json";
+
+
+
+            string strArDriveParam = File.ReadAllText(feName);
+
+
+            sCtrl.EmotionRealDrive(strArDriveParam);
+
+            fileIndex = fileIndex + 1;
+            if (fileIndex >= 215)
+                fileIndex = 1;
+        }
+
+    }
+#endif
+
     int interval = 0;
     public void face_express_drive_click()
     {
@@ -713,6 +753,39 @@ public class UIManager : MonoBehaviour
 
     /**************************************************************/
 
+    public void body_drive_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+
+        //全身
+        string dataJson;
+        if (true)
+            dataJson = File.ReadAllText(mTest.bodyDriveFile[0]);
+        else
+        //半身
+            dataJson = File.ReadAllText(mTest.halfbodyDriveFile[0]);
+
+        sCtrl.BodyRealDrive(dataJson);
+    }
+
+    public void body_drive_enable_click()
+    {
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.SetBodyDriveEnable("enable");
+    }
+    public void body_drive_disable_click()
+    {
+
+        if (!sCtrl)
+            sCtrl = GameObject.Find(control_node_name).GetComponent<SceneController>();
+
+        sCtrl.SetBodyDriveDisable("enable");
+    }
+
 
     public void export_glb_click()
     {
@@ -721,6 +794,5 @@ public class UIManager : MonoBehaviour
 
         sCtrl.ExportMeshToGLB("glb");
     }
-
 
 }
