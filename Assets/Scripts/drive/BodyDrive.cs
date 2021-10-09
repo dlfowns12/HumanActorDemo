@@ -1,3 +1,5 @@
+
+#define JOINRS_DRIVE_DEBUG_CODE
 #define ENABLE_FINGER_DRIVE
 #define ENABLE_RESET_BONE_WITH_ONLY_BODY
 
@@ -26,6 +28,39 @@ note:核心功能尽量不采用MonoBehavior继承
 public class BodyDrive 
 {
 
+
+#if JOINRS_DRIVE_DEBUG_CODE
+    [System.Serializable]
+    public class DebugInfo
+    {
+        public Vector3 displayOffset = new Vector3(0.4f, 0, 0);
+        [Range(-180, 180)]
+        public float xRotate = 0.0f;
+        [Range(-180, 180)]
+        public float yRotate = 0.0f;
+        [Range(-180, 180)]
+        public float zRotate = 0.0f;
+        public bool enableScaleJointsPoint = true;
+        public bool enableKalmanFilter = true;
+        public bool enableJointsPointsAmend = true;
+
+        public bool driveControl = false;
+        public bool enableDrive = true;
+        public bool enableBodyDrive = true;
+        public bool enableHandDrive = true;
+        public bool enableFootDrive = true;
+
+        [Range(-90, 90)]
+        public float upperBodyRotate = 0;
+        [Range(-90, 90)]
+        public float thighRotate = -5;
+        [Range(-90, 90)]
+        public float legRotate = 15;
+    }
+    public DebugInfo mDebugInfo = new DebugInfo();
+#endif
+
+
     /*****************************************
      头部姿态
      *****************************************/
@@ -43,9 +78,9 @@ public class BodyDrive
 
     // private GameObject m_BaseModelGo;
 
-    private float boneCorrect_x = -21;
-    private float boneCorrect_y = 15;
-    private float boneCorrect_z = -5;
+    private float boneCorrect_x = -18;
+    private float boneCorrect_y = 10;
+    private float boneCorrect_z = -4;
 
 
     /*****************************************
@@ -78,6 +113,16 @@ public class BodyDrive
     public GameObject mBaseModelObject;
     protected FullBodyBipedIK mFullBodyBipedIK;
     protected FingerRig[] mFingerRigs;
+#if ENABLE_BODY_JUMP
+    public class FrameInfo
+    {
+        public long frameTime;// ms
+        public float y;
+    }
+    protected Vector3 mPlayerInitPosition;
+    protected Queue<FrameInfo> mFrameInfos = new Queue<FrameInfo>();
+    protected float mYScore = 0.0f;
+#endif
 
     private Vector3 mForward;
     protected Vector3 mLeftHandForward;
@@ -102,7 +147,7 @@ public class BodyDrive
     protected Vector3[] mJointKalmanX = new Vector3[(int)PlayerKeyJointSlot.Count];
     protected Vector3[] mJointKalmanK = new Vector3[(int)PlayerKeyJointSlot.Count];
     protected float Q = 0.001f;
-    protected float R = 0.001f;
+    protected float R = 0.0015f;
 
     protected bool mEnableDrive = true;
     protected bool mEnableBodyDrive = true;
@@ -111,19 +156,31 @@ public class BodyDrive
     protected bool mEnableHalfBodyDrive = false;
     protected float mDriveTotalDegree = 1.0f;
 
+#if ENABLE_RESET_BONE_WITH_DRIVE_DEGREE
+    protected float mEasingFunctionsParam = 1.0f;
+    protected float mDriveDegreeAttenuation = 0.03f;
+    protected bool mEnableDriveAttenuation = false;
+#endif
+
+
 
     /***********************************************/
+
+
 
 
     /**********************************************/
     private static string sDriveObjectName = "BoneBodyControlObj";
     private static string sHipObjectName   = "BoneHipControlObj";
+    private static string sRenderObjectName = "DebugRender";
 
     private bool flag_body_drive_enable   = false;
 
     private bool flag_bone_initial = false;
 
+
     skeletonJson m_SkeletonData;
+
 
     public BodyDrive()
     {
@@ -138,7 +195,9 @@ public class BodyDrive
         if(head_root_bone_name =="")
             flag_intial = false;
 
+
         head_orig_rotation = new Vector3(head_root_bone_trans.localEulerAngles.x, head_root_bone_trans.localEulerAngles.y, head_root_bone_trans.localEulerAngles.z);
+
 
         //*****************
         boneMapDic = new Dictionary<string, string>();
@@ -146,6 +205,12 @@ public class BodyDrive
         //step1:读取 骨骼映射文件
         string strBoneData = File.ReadAllText(boneMapFile);
         BoneMapJson bonesData = JsonConvert.DeserializeObject<BoneMapJson>(strBoneData);
+
+        if(bonesData == null)
+        {
+            flag_intial = false;
+            MsgEvent.SendCallBackMsg((int)AvatarID.Err_bone_map_file, AvatarID.Err_bone_map_file.ToString());
+        }
 
         for (int i = 0; i < bonesData.BoneMap.Count; i++)
         {
@@ -168,19 +233,21 @@ public class BodyDrive
         mJoints2DPoints = new Vector2[(int)PlayerKeyJointSlot.Count];
         mJointsScore = new float[(int)PlayerKeyJointSlot.Count];
 
+
+
         flag_bone_initial = false;
     }
 
 
     public void Update(int type )
     {
-	
-        if (type == 1)
+        if(type == 1)
            head_root_bone_trans.localEulerAngles = new Vector3(head_orig_rotation.x + pitchAngle, head_orig_rotation.y + yawAngle,
                                                             head_orig_rotation.z + rollAngle);
         if (type == 2)
             setBonesDriveData(m_SkeletonData);
       
+
     }
 
     /// <summary>
@@ -189,13 +256,16 @@ public class BodyDrive
     /// <param name="pitchx"></param>
     /// <param name="yawy"></param>
     /// <param name="rollz"></param>
+
+
+
     public void setHeadGesture(float pitchx,float yawy,float rollz)
     {
          pitchAngle = pitchx;
          yawAngle   = yawy;
          rollAngle  = rollz;
 
-    }
+}
     /// <summary>
     /// 恢复头部姿态到初始位置
     /// </summary>
@@ -205,8 +275,10 @@ public class BodyDrive
     }
 
     /******************肢体驱动相关*****************/
+
     private void skeletonInitial()
     {
+       
         if (flag_bone_initial)
         {
             if (!mFullBodyBipedIK.enabled)
@@ -233,6 +305,8 @@ public class BodyDrive
                 mInitJointsState[(int)slot]= jointsState;
 
             }
+            else
+                Debug.LogError("can not get the transform " + name);
         }
         /*********ADD 0323*************/
         // 获取身体骨骼(不包含头部), 用于无肢体数据时重置骨骼
@@ -253,7 +327,6 @@ public class BodyDrive
             mInitJointsState[(int)PlayerKeyJointSlot.Ankle_R].transform.position -
             mInitJointsState[(int)PlayerKeyJointSlot.Toes_R].transform.position, mForward)) *
             mInitJointsState[(int)PlayerKeyJointSlot.Ankle_R].transform.rotation;
-
 
         mLeftHandForward = JointsDriveHelper.GetNormal(
             mInitJointsState[(int)PlayerKeyJointSlot.Wrist_L].transform.position,
@@ -281,25 +354,25 @@ public class BodyDrive
         mLeftHipRotationCorrection = Quaternion.FromToRotation(vHipRight2HipLeft, vRoot2HipLeft);
         mRightHipRotationCorrection = Quaternion.FromToRotation(vHipLeft2HipRight, vRoot2HipRight);
         // 标模的肩膀,脖子,腰椎这三个点的角度与AI的检测结果有差异, 需补齐差距
-        float aiShoulderAngle = 60;
+        float aiShoulderAngle = 65;
         mLeftShoulderAngleCorrection = Vector3.Angle(
             mInitJointsState[(int)PlayerKeyJointSlot.Spine1_M].position - mInitJointsState[(int)PlayerKeyJointSlot.Neck_M].position,
             mInitJointsState[(int)PlayerKeyJointSlot.Shoulder_L].position - mInitJointsState[(int)PlayerKeyJointSlot.Neck_M].position);
-        mLeftShoulderAngleCorrection = (mLeftShoulderAngleCorrection - aiShoulderAngle);
+        mLeftShoulderAngleCorrection = (mLeftShoulderAngleCorrection - aiShoulderAngle) * 0.8f;
         mRightShoulderAngleCorrection = Vector3.Angle(
             mInitJointsState[(int)PlayerKeyJointSlot.Spine1_M].position - mInitJointsState[(int)PlayerKeyJointSlot.Neck_M].position,
             mInitJointsState[(int)PlayerKeyJointSlot.Shoulder_R].position - mInitJointsState[(int)PlayerKeyJointSlot.Neck_M].position);
-        mRightShoulderAngleCorrection = (mRightShoulderAngleCorrection - aiShoulderAngle);
+        mRightShoulderAngleCorrection = (mRightShoulderAngleCorrection - aiShoulderAngle) * 0.8f;
         // 标模脚掌的旋转角度有AI检测结果的有差异, 需补齐差距
-        float aiFootAngle = 65;
+        float aiFootAngle = 68;
         mLeftFootAngleCorrection = Vector3.Angle(
             mInitJointsState[(int)PlayerKeyJointSlot.Knee_L].position - mInitJointsState[(int)PlayerKeyJointSlot.Ankle_L].position,
             mInitJointsState[(int)PlayerKeyJointSlot.Toes_L].position - mInitJointsState[(int)PlayerKeyJointSlot.Ankle_L].position);
-        mLeftFootAngleCorrection = (mLeftFootAngleCorrection - aiFootAngle);
+        mLeftFootAngleCorrection = (mLeftFootAngleCorrection - aiFootAngle) * 0.8f;
         mRightFootAngleCorrection = Vector3.Angle(
             mInitJointsState[(int)PlayerKeyJointSlot.Knee_R].position - mInitJointsState[(int)PlayerKeyJointSlot.Ankle_R].position,
             mInitJointsState[(int)PlayerKeyJointSlot.Toes_R].position - mInitJointsState[(int)PlayerKeyJointSlot.Ankle_R].position);
-        mRightFootAngleCorrection = (mRightFootAngleCorrection - aiFootAngle);
+        mRightFootAngleCorrection = (mRightFootAngleCorrection - aiFootAngle) * 0.8f;
 
         mDriveNodes = GetDriveNodes();
         InitFullBodyBipedIK();
@@ -312,23 +385,36 @@ public class BodyDrive
         string nodeName = "DriveObject";
         var gameObject = mBaseModelObject.transform.parent.gameObject;
 
-
-
         GameObject driveObject = JointsDriveHelper.GetObject(gameObject, nodeName);
         var currentScale = gameObject.transform.localScale;
         var inverScale = new Vector3(1.0f / currentScale.x, 1.0f / currentScale.y, 1.0f / currentScale.z);
-        var inverEuler = gameObject.transform.localEulerAngles;
-		
+        var inverEuler = gameObject.transform.localEulerAngles * -1;
         driveObject.transform.localRotation = Quaternion.Euler(inverEuler);
         driveObject.transform.localScale = inverScale;
         var driveNodes = new Dictionary<DriveNodeType, GameObject>();
         for (var type = DriveNodeType.none; type < DriveNodeType.count; type++)
         {
             string name = type.ToString();
+
+#if ENABLE_FINGER_DRIVE
+#else
+            if (name.Contains("Finger"))
+            {
+                continue;
+            }
+#endif
+
             var transform = driveObject.transform.Find(name);
             GameObject node;
-            node = JointsDriveHelper.GetObject(driveObject, name);
-            transform = node.transform;
+            do
+            {
+                if (transform != null)
+                {
+                    break;
+                }
+                node = JointsDriveHelper.GetObject(driveObject, name);
+                transform = node.transform;
+            } while (false);
             node = transform.gameObject;
             driveNodes[type] = node;
         }
@@ -358,7 +444,9 @@ public class BodyDrive
         ik.references.rightForearm = mInitJointsState[(int)PlayerKeyJointSlot.Elbow_R].transform;
         ik.references.rightHand = mInitJointsState[(int)PlayerKeyJointSlot.Wrist_R].transform;
 
-        ik.references.head = mInitJointsState[(int)PlayerKeyJointSlot.Head_M].transform; // 头
+
+        //暂时去掉，肢体驱动和表情驱动 有冲突
+        //ik.references.head = mInitJointsState[(int)PlayerKeyJointSlot.Head_M].transform; // 头
         ik.references.spine = new Transform[1];
         ik.references.spine[0] = mInitJointsState[(int)PlayerKeyJointSlot.Spine1_M].transform;
 
@@ -425,6 +513,10 @@ public class BodyDrive
 
     protected void UpdateIKParam()
     {
+        if (mFullBodyBipedIK == null)
+        {
+            return;
+        }
         var ik = mFullBodyBipedIK;
 
         float bodyDegree = (mEnableDrive && mEnableBodyDrive) ? mDriveTotalDegree : 0.0f;
@@ -543,33 +635,42 @@ public class BodyDrive
         }
 
         var fullBodyRotate = fullBodyRotation;
-        fullBodyRotate = fullBodyRotation;
+#if JOINRS_DRIVE_DEBUG_CODE
+        var debugRotate = Quaternion.Euler(mDebugInfo.xRotate, mDebugInfo.yRotate, mDebugInfo.zRotate);
+#else
+        var debugRotate = Quaternion.Euler(0, 0, 0);
+#endif
+        fullBodyRotate = debugRotate * fullBodyRotation;
 
         var vCurrentHip = mJointsPoints[(int)PlayerKeyJointSlot.Hip_L] - mJointsPoints[(int)PlayerKeyJointSlot.Hip_R];
         var vBaseModelHip = mInitJointsState[(int)PlayerKeyJointSlot.Hip_L].position - mInitJointsState[(int)PlayerKeyJointSlot.Hip_R].position;
         // 上半身修正
+#if JOINRS_DRIVE_DEBUG_CODE
+        var upperBodyRotation = Quaternion.AngleAxis(mDebugInfo.upperBodyRotate, vCurrentHip);
+#else
         var upperBodyRotation = Quaternion.AngleAxis(9, vCurrentHip);
-        var upperBodyRotate = fullBodyRotation * upperBodyRotation; // 绕左右大腿连线
+#endif
+        var upperBodyRotate = debugRotate * fullBodyRotation * upperBodyRotation; // 绕左右大腿连线
         // 肩膀修正
         var leftShoulderNormal = JointsDriveHelper.GetNormal(
             mJointsPoints[(int)PlayerKeyJointSlot.Neck_M],
             mJointsPoints[(int)PlayerKeyJointSlot.Spine1_M],
             mJointsPoints[(int)PlayerKeyJointSlot.Shoulder_L]);
         var leftShoulderRotation = Quaternion.AngleAxis(mLeftShoulderAngleCorrection, leftShoulderNormal);
-        var leftShoulderRotate = fullBodyRotation * upperBodyRotation * leftShoulderRotation;
+        var leftShoulderRotate = debugRotate * fullBodyRotation * upperBodyRotation * leftShoulderRotation;
         var rightShoulderNormal = JointsDriveHelper.GetNormal(
             mJointsPoints[(int)PlayerKeyJointSlot.Neck_M],
             mJointsPoints[(int)PlayerKeyJointSlot.Spine1_M],
             mJointsPoints[(int)PlayerKeyJointSlot.Shoulder_R]);
         var rightShoulderRotation = Quaternion.AngleAxis(mRightShoulderAngleCorrection, rightShoulderNormal);
-        var rightShoulderRotate = fullBodyRotation * upperBodyRotation * rightShoulderRotation;
+        var rightShoulderRotate = debugRotate * fullBodyRotation * upperBodyRotation * rightShoulderRotation;
 
         // 臀部修正
         var hipRotation = Quaternion.FromToRotation(vBaseModelHip, vCurrentHip);
         var leftHipRotate = hipRotation * mLeftHipRotationCorrection * Quaternion.Inverse(hipRotation);
-        leftHipRotate = fullBodyRotation * leftHipRotate;
+        leftHipRotate = debugRotate * fullBodyRotation * leftHipRotate;
         var rightHipRotate = hipRotation * mRightHipRotationCorrection * Quaternion.Inverse(hipRotation);
-        rightHipRotate = fullBodyRotation * rightHipRotate;
+        rightHipRotate = debugRotate * fullBodyRotation * rightHipRotate;
         // 腿部修正
         var leftLegNormal = JointsDriveHelper.GetNormal(
             mJointsPoints[(int)PlayerKeyJointSlot.Knee_L],
@@ -580,46 +681,54 @@ public class BodyDrive
             mJointsPoints[(int)PlayerKeyJointSlot.Hip_R],
             mJointsPoints[(int)PlayerKeyJointSlot.Ankle_R]);
         // 大腿修正
+#if JOINRS_DRIVE_DEBUG_CODE
+        float thighAngle = mDebugInfo.thighRotate;
+#else
         float thighAngle = 0; // 绕大腿,膝盖,脚踝所在平面法线
+#endif
         var leftThighRotation = Quaternion.Euler(0, 0, 0);
         if (leftLegNormal.magnitude > 0.5f)
         {
             leftThighRotation = Quaternion.AngleAxis(thighAngle, leftLegNormal);
         }
-        var leftThighRotate = fullBodyRotation * leftThighRotation;
+        var leftThighRotate = debugRotate * fullBodyRotation * leftThighRotation;
         var rightThighRotation = Quaternion.Euler(0, 0, 0);
         if (rightLegNormal.magnitude > 0.5f)
         {
             rightThighRotation = Quaternion.AngleAxis(thighAngle, rightLegNormal);
         }
-        var rightThighRotate = fullBodyRotation * rightThighRotation;
+        var rightThighRotate = debugRotate * fullBodyRotation * rightThighRotation;
         // 小腿修正
+#if JOINRS_DRIVE_DEBUG_CODE
+        float legAngle = mDebugInfo.legRotate;
+#else
         float legAngle = 9; // 绕大腿,膝盖,脚踝所在平面法线
+#endif
         var leftLegRotation = Quaternion.Euler(0, 0, 0);
         if (leftLegNormal.magnitude > 0.5f)
         {
             leftLegRotation = Quaternion.AngleAxis(legAngle, leftLegNormal);
         }
-        var leftLegRotate = fullBodyRotation * leftThighRotation * leftLegRotation;
+        var leftLegRotate = debugRotate * fullBodyRotation * leftThighRotation * leftLegRotation;
         var rightLegRotation = Quaternion.Euler(0, 0, 0);
         if (rightLegNormal.magnitude > 0.5f)
         {
             rightLegRotation = Quaternion.AngleAxis(legAngle, rightLegNormal);
         }
-        var rightLegRotate = fullBodyRotation * rightThighRotation * rightLegRotation;
+        var rightLegRotate = debugRotate * fullBodyRotation * rightThighRotation * rightLegRotation;
         // 脚掌修正
         var leftFootNormal = JointsDriveHelper.GetNormal(
             mJointsPoints[(int)PlayerKeyJointSlot.Ankle_L],
             mJointsPoints[(int)PlayerKeyJointSlot.Knee_L],
             mJointsPoints[(int)PlayerKeyJointSlot.Toes_L]);
         var leftFootRotation = Quaternion.AngleAxis(mLeftFootAngleCorrection, leftFootNormal);
-        var leftFootRotate = fullBodyRotation * leftLegRotation * leftFootRotation;
+        var leftFootRotate = debugRotate * fullBodyRotation * leftLegRotation * leftFootRotation;
         var rightAnkleNormal = JointsDriveHelper.GetNormal(
             mJointsPoints[(int)PlayerKeyJointSlot.Ankle_R],
             mJointsPoints[(int)PlayerKeyJointSlot.Knee_R],
             mJointsPoints[(int)PlayerKeyJointSlot.Toes_R]);
         var rightFootRotation = Quaternion.AngleAxis(mRightFootAngleCorrection, rightAnkleNormal);
-        var rightFootRotate = fullBodyRotation * rightLegRotation * rightFootRotation;
+        var rightFootRotate = debugRotate * fullBodyRotation * rightLegRotation * rightFootRotation;
 
         var jointsRotate = new Dictionary<PlayerKeyJointSlot, Quaternion>();
         // 头部
@@ -762,6 +871,7 @@ public class BodyDrive
 
 
 
+
     public void setBonesDriveDataJson(skeletonJson jointsList)
     {
         m_SkeletonData = jointsList;
@@ -825,6 +935,9 @@ public class BodyDrive
             }
         }
 
+
+
+        
 
 
         SwitchDriveAndUpdateParam();
@@ -903,6 +1016,10 @@ public class BodyDrive
     public void EnableFingerDrive(bool enable, int index = -1)
     {
 #if ENABLE_FINGER_DRIVE
+        if (mFingerRigs == null)
+        {
+            return;
+        }
         if (index < 0)
         {
             for (int i = 0; i < mFingerRigs.Length; i++)
@@ -921,19 +1038,21 @@ public class BodyDrive
     {
         mCurrentFulcrumOffset = GetFulcrumOffset();
        
-        mDriveNodes[DriveNodeType.leftLeg].transform.localPosition = Get(PlayerKeyJointSlot.Ankle_L);
-        mDriveNodes[DriveNodeType.rightLeg].transform.localPosition = Get(PlayerKeyJointSlot.Ankle_R);
-        mDriveNodes[DriveNodeType.leftKnee].transform.localPosition = Get(PlayerKeyJointSlot.Knee_L);
-        mDriveNodes[DriveNodeType.rightKnee].transform.localPosition = Get(PlayerKeyJointSlot.Knee_R);
-        mDriveNodes[DriveNodeType.leftHip].transform.localPosition = Get(PlayerKeyJointSlot.Hip_L);
-        mDriveNodes[DriveNodeType.rightHip].transform.localPosition = Get(PlayerKeyJointSlot.Hip_R);
+        {
+            mDriveNodes[DriveNodeType.leftLeg].transform.localPosition = Get(PlayerKeyJointSlot.Ankle_L);
+            mDriveNodes[DriveNodeType.rightLeg].transform.localPosition = Get(PlayerKeyJointSlot.Ankle_R);
+            mDriveNodes[DriveNodeType.leftKnee].transform.localPosition = Get(PlayerKeyJointSlot.Knee_L);
+            mDriveNodes[DriveNodeType.rightKnee].transform.localPosition = Get(PlayerKeyJointSlot.Knee_R);
+            mDriveNodes[DriveNodeType.leftHip].transform.localPosition = Get(PlayerKeyJointSlot.Hip_L);
+            mDriveNodes[DriveNodeType.rightHip].transform.localPosition = Get(PlayerKeyJointSlot.Hip_R);
 
-        mDriveNodes[DriveNodeType.leftLeg].transform.localRotation = Quaternion.LookRotation(
-            mJointsPoints[(int)PlayerKeyJointSlot.Ankle_L] - mJointsPoints[(int)PlayerKeyJointSlot.Toes_L],
-            mJointsPoints[(int)PlayerKeyJointSlot.Knee_L] - mJointsPoints[(int)PlayerKeyJointSlot.Ankle_L]) * mLeftAnkleInvRotation;
-        mDriveNodes[DriveNodeType.rightLeg].transform.localRotation = Quaternion.LookRotation(
-            mJointsPoints[(int)PlayerKeyJointSlot.Ankle_R] - mJointsPoints[(int)PlayerKeyJointSlot.Toes_R],
-            mJointsPoints[(int)PlayerKeyJointSlot.Knee_R] - mJointsPoints[(int)PlayerKeyJointSlot.Ankle_R]) * mRightAnkleInvRotation;
+            mDriveNodes[DriveNodeType.leftLeg].transform.localRotation = Quaternion.LookRotation(
+                mJointsPoints[(int)PlayerKeyJointSlot.Ankle_L] - mJointsPoints[(int)PlayerKeyJointSlot.Toes_L],
+                mJointsPoints[(int)PlayerKeyJointSlot.Knee_L] - mJointsPoints[(int)PlayerKeyJointSlot.Ankle_L]) * mLeftAnkleInvRotation;
+            mDriveNodes[DriveNodeType.rightLeg].transform.localRotation = Quaternion.LookRotation(
+                mJointsPoints[(int)PlayerKeyJointSlot.Ankle_R] - mJointsPoints[(int)PlayerKeyJointSlot.Toes_R],
+                mJointsPoints[(int)PlayerKeyJointSlot.Knee_R] - mJointsPoints[(int)PlayerKeyJointSlot.Ankle_R]) * mRightAnkleInvRotation;
+        }
 
         Vector3 Get(PlayerKeyJointSlot slot)
         {
@@ -944,7 +1063,10 @@ public class BodyDrive
         mDriveNodes[DriveNodeType.root].transform.localPosition = Get(PlayerKeyJointSlot.Root_M);
         mDriveNodes[DriveNodeType.neck].transform.localPosition = Get(PlayerKeyJointSlot.Neck_M);
         mDriveNodes[DriveNodeType.spine].transform.localPosition = Get(PlayerKeyJointSlot.Spine1_M);
+
         mDriveNodes[DriveNodeType.body].transform.localPosition = Get(PlayerKeyJointSlot.Root_M);
+
+
         mDriveNodes[DriveNodeType.leftWrist].transform.localPosition = Get(PlayerKeyJointSlot.Wrist_L);
         mDriveNodes[DriveNodeType.rightWrist].transform.localPosition = Get(PlayerKeyJointSlot.Wrist_R);
         mDriveNodes[DriveNodeType.leftElbow].transform.localPosition = Get(PlayerKeyJointSlot.Elbow_L);
@@ -955,7 +1077,7 @@ public class BodyDrive
         mCurrentLeftHandForward = mLeftHandForward;
         mCurrentRightHandForward = mRightHandForward;
 
-        if (mFingerRigs[0].enabled)
+        if (mFingerRigs != null && mFingerRigs[0].enabled)
         {
             mCurrentLeftHandForward = JointsDriveHelper.GetNormal(
                 mJointsPoints[(int)PlayerKeyJointSlot.Wrist_L_scale],
@@ -965,7 +1087,7 @@ public class BodyDrive
                 mJointsPoints[(int)PlayerKeyJointSlot.ThumbFinger1_L_scale] - mJointsPoints[(int)PlayerKeyJointSlot.MiddleFinger1_L_scale], mCurrentLeftHandForward) * mLeftHandInvRotation;
         }
 
-        if (mFingerRigs[1].enabled)
+        if (mFingerRigs != null && mFingerRigs[1].enabled)
         {
             mCurrentRightHandForward = JointsDriveHelper.GetNormal(
             mJointsPoints[(int)PlayerKeyJointSlot.Wrist_R_scale],
@@ -978,7 +1100,7 @@ public class BodyDrive
 #if ENABLE_FINGER_DRIVE
         for (int handIndex = 0; handIndex < 2; handIndex++)
         {
-            if (!mFingerRigs[handIndex].enabled)
+            if (mFingerRigs == null || !mFingerRigs[handIndex].enabled)
             {
                 continue;
             }
@@ -1015,6 +1137,9 @@ public class BodyDrive
         }
 #endif
 
+
     }
+
+
 
 }
