@@ -30,8 +30,11 @@ namespace NatSuite.Recorders {
         /// <param name="channelCount">Audio channel count. Pass 0 for no audio.</param>
         /// <param name="bitrate">Video bitrate in bits per second.</param>
         /// <param name="keyframeInterval">Keyframe interval in seconds.</param>
+#if UNITY_LINUX_RECORDER
+        HEVCRecorder(int width, int height, float frameRate, int sampleRate = 0, int channelCount = 0, int bitrate = (int)(960 * 540 * 11.4f), int keyframeInterval = 3) { }
+#else
         public HEVCRecorder (int width, int height, float frameRate, int sampleRate = 0, int channelCount = 0, int bitrate = (int)(960 * 540 * 11.4f), int keyframeInterval = 3) => this.recorder = new NativeRecorder((callback, context) => Bridge.CreateHEVCRecorder(width, height, frameRate, bitrate, keyframeInterval, sampleRate, channelCount, Utility.GetPath(@".mp4"), callback, context));
-
+#endif
         /// <summary>
         /// Commit a video pixel buffer for encoding.
         /// The pixel buffer MUST have an RGBA8888 pixel layout.

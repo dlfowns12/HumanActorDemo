@@ -92,6 +92,7 @@ public class standardmodelJson
     public float scalejitter; //系数抖动
     public string necktransmat;
 
+
     //仿真相关
     public string simfile;
 

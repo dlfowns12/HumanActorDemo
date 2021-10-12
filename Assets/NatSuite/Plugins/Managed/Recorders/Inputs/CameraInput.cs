@@ -96,6 +96,9 @@ namespace NatSuite.Recorders.Inputs {
                     var prevActive = RenderTexture.active;
                     RenderTexture.active = frameBuffer;
                     readbackBuffer.ReadPixels(new Rect(0, 0, frameBuffer.width, frameBuffer.height), 0, 0, false);
+#if UNITY_LINUX_RECORDER
+                    TextureHelper.rotate(readbackBuffer);
+#endif
                     readbackBuffer.GetRawTextureData<byte>().CopyTo(pixelBuffer);
                     recorder.CommitFrame(pixelBuffer, timestamp);
                     RenderTexture.active = prevActive;

@@ -501,6 +501,7 @@ namespace Avatar3D
             m_AvatarManager.trackyjitter = modeljson.trackyjitter;
             m_AvatarManager.scalejitter  = modeljson.scalejitter;
 
+
             int headMatNum = av_skHead.sharedMaterials.Length;
 
             if (headMatNum < 2)
@@ -1269,6 +1270,7 @@ exportEmotionBSdata(strStaParamJson)
 
             float yvalue = Mathf.Sin(Mathf.PI * headAngle.x / 180.0f);
             yvalue = Mathf.Abs(yvalue);
+
             if (!flag_ar_drive_update)
             {
 
@@ -1316,7 +1318,8 @@ exportEmotionBSdata(strStaParamJson)
             flag_ar_drive_update = true;
 
         }
-        
+
+
         /// <summary>
         /// ar驱动，实时跟踪摄像头画面人头位置，驱动虚拟形象头模
         /// </summary>

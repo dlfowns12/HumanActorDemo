@@ -58,6 +58,16 @@ public class SceneController : MonoBehaviour
         Debug.Log("QualitySettings#shadowDistance: " + QualitySettings.shadowDistance);
         Debug.Log("QualitySettings#antiAliasing: " + QualitySettings.antiAliasing);
 
+
+        ////定义场景父节点,名称统一定义
+
+#if UNITY_LINUX_RECORDER
+        GameObject proxyGO = new GameObject("AvatarProxy");
+        proxyGO.AddComponent<AvatarCommand>();
+#elif UNITY_LINUX_RTC
+        GameObject rtcGO = new GameObject("DVCStreamer");
+        rtcGO.AddComponent<DVCStreamer>();
+#endif
     }
 
 

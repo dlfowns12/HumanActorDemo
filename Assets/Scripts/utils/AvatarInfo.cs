@@ -51,6 +51,7 @@ public class AvatarManager
     public float  scalejitter;        //抖动系数
     public string neckTransMatName;  //颈部透明材质
 
+
     public Material neckMat;
     public Material neckTransMat;
 

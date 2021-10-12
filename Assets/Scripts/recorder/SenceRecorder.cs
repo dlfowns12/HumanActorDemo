@@ -129,8 +129,13 @@ public class SenceRecorder
             path = path + ".mp4";
 
             Utility.SetExportPath(path);
+
         
+#if UNITY_LINUX_RECORDER
+            mp4recorder = new MP4Recorder(Utility.GetPath(@".mp4"), width, height, frameRate, sampleRate, channelCount, bitrate);
+#else
             mp4recorder = new MP4Recorder(width, height, frameRate, sampleRate, channelCount);
+#endif
             mp4cameraInput = new CameraInput(mp4recorder, clock, m_CameraComp);
 
 

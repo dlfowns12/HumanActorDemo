@@ -26,8 +26,11 @@ namespace NatSuite.Recorders {
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
         /// <param name="frameDuration">Frame duration in seconds.</param>
+#if UNITY_LINUX_RECORDER
+        public GIFRecorder(int width, int height, float frameDuration) { }
+#else
         public GIFRecorder (int width, int height, float frameDuration) => this.recorder = new NativeRecorder((callback, context) => Bridge.CreateGIFRecorder(width, height, frameDuration, Utility.GetPath(@".gif"), callback, context));
-
+#endif
         /// <summary>
         /// Commit a video pixel buffer for encoding.
         /// The pixel buffer MUST have an RGBA8888 pixel layout.

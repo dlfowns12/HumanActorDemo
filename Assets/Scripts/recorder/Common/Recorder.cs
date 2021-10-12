@@ -241,7 +241,11 @@ namespace DVCRecorder
                 if (_elapsedTime >= 1.0f / captureFrameRate)
                 {
                     _elapsedTime = 0;
+#if UNITY_LINUX_RECORDER
+                    long timestamp = (long)(m_RealtimeClock.timestamp * 1.5);
+#else
                     long timestamp = m_RealtimeClock.timestamp;
+#endif
                     RenderTexture rt = GetTemporaryRenderTexture();
                     Graphics.Blit(null, rt);
 

@@ -42,7 +42,6 @@ public class UIManager : MonoBehaviour
 
     bool flag_load = false;
 
-
     public void Start()
     { 
 
