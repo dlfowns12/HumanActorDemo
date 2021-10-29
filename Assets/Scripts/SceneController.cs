@@ -558,6 +558,13 @@ public class SceneController : MonoBehaviour
         }
     }
 
+
+    public void ArFaceOffset(float value, int type)
+    {
+        if (commonAvatarKits != null && flag_ar_drive_enable)
+            commonAvatarKits.faceArSetOffset(value, type);
+    }
+
     public void ArFaceDriveDisable(string strDisable)
     {
         if (commonAvatarKits != null)

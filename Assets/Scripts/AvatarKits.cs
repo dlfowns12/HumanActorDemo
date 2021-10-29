@@ -1318,6 +1318,35 @@ exportEmotionBSdata(strStaParamJson)
             flag_ar_drive_update = true;
 
         }
+        public void faceArSetOffset(float value,int type)
+        {
+
+            Vector3 direction = new Vector3(0.0f, 0.0f, 0.0f);
+
+            Vector3 rotatedDirection = pre_qt * direction;
+            Vector3 rotatedPoint = rotatedDirection;
+
+            float xvalue = Mathf.Sin(Mathf.PI * pre_headAngle.y / 180.0f);
+            xvalue = Mathf.Abs(xvalue);
+
+            //if (pre_headAngle.y > 0)
+            //    m_LocalTrackx = pre_headPos.x + rotatedPoint.x;
+            //else
+            //    m_LocalTrackx = pre_headPos.x - rotatedPoint.x;
+
+            m_LocalTrackx = pre_headPos.x + xvalue;
+
+            //m_LocalTrackx = pre_headPos.y;
+            m_LocalTracky = pre_headPos.y;
+            m_LocalTrackz = -pre_headPos.z;
+
+
+           // Debug.Log("new headx,new heady,new headz:" + m_LocalTrackx + "," + m_LocalTracky + "," + m_LocalTrackz);
+
+
+            flag_ar_drive_update = true;
+            Update();
+        }
 
 
         /// <summary>
